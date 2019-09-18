@@ -20,6 +20,7 @@ import numpy as np
 
 from . import tracking, rotations
 from .imu_new import integrate_gyro_quaternion_uniform
+from .imu_new import post_process_L3G4200D_data
 
 # Handle OpenCV 2.4.x -> 3.0
 try:
@@ -78,10 +79,16 @@ class GyroStream(object):
         instance.data = data
         return instance
 
-
     @property
     def num_samples(self):
         return self.data.shape[0]
+
+    def prefilter(self, do_plot = False):
+        if not self.data.any() == None:
+            self.data = post_process_L3G4200D_data(self.data.T, do_plot).T
+        else:
+            raise Exception("Load first and then do prefiltering")
+        return
 
     def integrate(self, dt):
         """Integrate gyro measurements to orientation using a uniform sample rate.

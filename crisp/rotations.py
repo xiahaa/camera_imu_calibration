@@ -17,18 +17,17 @@ from numpy.testing import assert_almost_equal
 from . import ransac
 
 #------------------------------------------------------------------------------
-
 def procrustes(X, Y, remove_mean=False):
     """Orthogonal procrustes problem solver
-    
+
     The procrustes problem  finds the best rotation R, and translation t
     where
         X = R*Y + t
-    
+
     The number of points in X and Y must be at least 2.
     For the minimal case of two points, a third point is temporarily created
     and used for the estimation.
-    
+
     Parameters
     -----------------
     X : (3, N) ndarray
@@ -38,7 +37,7 @@ def procrustes(X, Y, remove_mean=False):
     remove_mean : bool
             If true, the mean is removed from X and Y before solving the
             procrustes problem. Can yield better results in some applications.
-            
+
     Returns
     -----------------
     R : (3,3) ndarray
@@ -49,15 +48,15 @@ def procrustes(X, Y, remove_mean=False):
 
     assert X.shape == Y.shape
     assert X.shape[0] > 1
-    
+
     # Minimal case, create third point using cross product
     if X.shape[0] == 2:
         X3 = np.cross(X[:,0], X[:,1], axis=0)
         X = np.hstack((X, X3 / np.linalg.norm(X3)))
         Y3 = np.cross(Y[:,0], Y[:,1], axis=0)
         Y = np.hstack((Y, Y3 / np.linalg.norm(Y3)))
-        
-    
+
+
     D, N = X.shape[:2]
     if remove_mean:
         mx = np.mean(X, axis=1).reshape(D, 1)
@@ -87,19 +86,19 @@ def procrustes(X, Y, remove_mean=False):
 
 def rotation_matrix_to_axis_angle(R):
     """Convert a 3D rotation matrix to a 3D axis angle representation
-    
+
     Parameters
     ---------------
     R : (3,3) array
         Rotation matrix
-        
+
     Returns
     ----------------
     v : (3,) array
         (Unit-) rotation angle
     theta : float
         Angle of rotations, in radians
-    
+
     Note
     --------------
     This uses the algorithm as described in Multiple View Geometry, p. 584
@@ -111,19 +110,19 @@ def rotation_matrix_to_axis_angle(R):
     s = S[k]
     assert_almost_equal(s, 1.0, err_msg="Not a rotation matrix: No eigen value s=1")
     v = np.real(V[:, k]) # Result is generally complex
-    
+
     vhat = np.array([R[2,1] - R[1,2], R[0,2] - R[2,0], R[1,0] - R[0,1]])
     sintheta = 0.5 * np.dot(v, vhat)
     costheta = 0.5 * (np.trace(R) - 1)
     theta = np.arctan2(sintheta, costheta)
-    
+
     return (v, theta)
 
 #--------------------------------------------------------------------------
 
 def axis_angle_to_rotation_matrix(v, theta):
     """Convert rotation from axis-angle to rotation matrix
-    
+
         Parameters
     ---------------
     v : (3,) ndarray
@@ -152,7 +151,7 @@ def axis_angle_to_rotation_matrix(v, theta):
 
 def quat_to_rotation_matrix(q):
     """Convert unit quaternion to rotation matrix
-    
+
     Parameters
     -------------
     q : (4,) ndarray
@@ -162,7 +161,7 @@ def quat_to_rotation_matrix(q):
     ----------------
     R : (3,3) ndarray
             Rotation matrix
-    
+
     """
     q = q.flatten()
     assert q.size == 4
@@ -180,30 +179,30 @@ qq[0] - qq[1] - qq[2] + qq[3]]])
 
 def integrate_gyro_quaternion(gyro_ts, gyro_data):
     """Integrate angular velocities to rotations
-    
+
     Parameters
     ---------------
     gyro_ts : ndarray
             Timestamps
     gyro_data : (3, N) ndarray
             Angular velocity measurements
-    
+
     Returns
     ---------------
     rotations : (4, N) ndarray
             Rotation sequence as unit quaternions (first element scalar)
-    
+
     """
     #NB: Quaternion q = [a, n1, n2, n3], scalar first
     q_list = np.zeros((gyro_ts.shape[0], 4)) # Nx4 quaternion list
     q_list[0,:] = np.array([1, 0, 0, 0]) # Initial rotation (no rotation)
-    
+
     # Iterate over all (except first)
     for i in range(1, gyro_ts.size):
         w = gyro_data[i]
         dt = gyro_ts[i] - gyro_ts[i - 1]
         qprev = q_list[i - 1]
-        
+
         A = np.array([[0,    -w[0],  -w[1],  -w[2]],
                      [w[0],  0,      w[2],  -w[1]],
                      [w[1], -w[2],   0,      w[0]],
@@ -212,14 +211,14 @@ def integrate_gyro_quaternion(gyro_ts, gyro_data):
         qnorm = np.sqrt(np.sum(qnew ** 2))
         qnew /= qnorm
         q_list[i] = qnew
-         
+
     return q_list
 
 #--------------------------------------------------------------------------
 
 def slerp(q1, q2, u):
     """SLERP: Spherical linear interpolation between two unit quaternions.
-    
+
     Parameters
     ------------
     q1 : (4, ) ndarray
@@ -227,9 +226,9 @@ def slerp(q1, q2, u):
     q2 : (4, ) ndarray
             Unit quaternion (first element scalar)
     u : float
-            Interpolation factor in range [0,1] where 0 is first quaternion 
+            Interpolation factor in range [0,1] where 0 is first quaternion
             and 1 is second quaternion.
-            
+
     Returns
     -----------
     q : (4,) ndarray
@@ -269,7 +268,7 @@ def slerp(q1, q2, u):
 
 def estimate_rotation_procrustes_ransac(x, y, camera, threshold, inlier_ratio=0.75, do_translation=False):
     """Calculate rotation between two sets of image coordinates using ransac.
-    
+
     Inlier criteria is the reprojection error of y into image 1.
 
     Parameters
@@ -289,15 +288,15 @@ def estimate_rotation_procrustes_ransac(x, y, camera, threshold, inlier_ratio=0.
     """
     assert x.shape == y.shape
     assert x.shape[0] == 2
-    
+
     X = camera.unproject(x)
     Y = camera.unproject(y)
-    
+
     data = np.vstack((X, Y, x))
     assert data.shape[0] == 8
-    
+
     model_func = lambda data: procrustes(data[:3], data[3:6], remove_mean=do_translation)
-    
+
     def eval_func(model, data):
         Y = data[3:6].reshape(3,-1)
         x = data[6:].reshape(2,-1)
@@ -308,18 +307,26 @@ def estimate_rotation_procrustes_ransac(x, y, camera, threshold, inlier_ratio=0.
         dist = np.sqrt(np.sum((x-xhat)**2, axis=0))
 
         return dist
-    
+
     inlier_selection_prob = 0.99999
     model_points = 2
     ransac_iterations = int(np.log(1 - inlier_selection_prob) / np.log(1-inlier_ratio**model_points))
-    
-    model_est, ransac_consensus_idx = ransac.RANSAC(model_func, eval_func, data, model_points, ransac_iterations, threshold, recalculate=True)    
+
+    model_est, ransac_consensus_idx = ransac.RANSAC(model_func, eval_func, data, model_points, ransac_iterations, threshold, recalculate=True)
     if model_est is not None:
         (R, t) = model_est
-        dist = eval_func((R, t), data)                
+        dist = eval_func((R, t), data)
     else:
         dist = None
         R, t = None, None
         ransac_consensus_idx = []
 
     return R, t, dist, ransac_consensus_idx
+
+
+def to_rot_matrix(r):
+    "Convert combined axis angle vector to rotation matrix"
+    theta = np.linalg.norm(r)
+    v = r/theta
+    R = crisp.rotations.axis_angle_to_rotation_matrix(v, theta)
+    return R
