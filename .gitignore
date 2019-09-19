@@ -20,3 +20,4 @@ conda.recipe/meta.yaml
 LICENSE
 MANIFEST.in
 setup.cfg
+data/*
