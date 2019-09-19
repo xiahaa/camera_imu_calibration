@@ -10,13 +10,20 @@ from the output that the result looks ok.
 3.
 
 
-
-
 files done:
-camera.py: ok
-imu_new.py： ok
-ransac.py: ok
-rotations.py: ok
-stream.py: ok
-tracking.py: ok
-videoslice.py: ok
+calibration: ok
+timesync: ok
+~~znccpyr.py~~
+~~stream.py: ok~~
+~~camera.py: ok~~
+~~imu_new.py： ok~~
+~~ransac.py: ok~~
+~~rotations.py: ok~~
+~~tracking.py: ok~~
+~~videoslice.py: ok~~
+
+## things to notice：
+1. readout is not used for projection/backprojection.
+
+## todo
+1. numpy, scipy 

@@ -4,30 +4,24 @@ from __future__ import division, print_function, absolute_import
 """
 Input streams module
 """
-
-__author__ = "Hannes Ovrén"
-__copyright__ = "Copyright 2015, Hannes Ovrén"
-__license__ = "GPL"
-__email__ = "hannes.ovren@liu.se"
-
 import os
 import collections
 import logging
-logger = logging.getLogger('crisp')
+logger = logging.getLogger('camera_imu_calibrator')
 
 import cv2
 import numpy as np
 
-from . import tracking, rotations
+from . import tracking_new, rotations
 from .imu_new import integrate_gyro_quaternion_uniform
 from .imu_new import post_process_L3G4200D_data
+from . import features
 
 # Handle OpenCV 2.4.x -> 3.0
 try:
     CV_CAP_PROP_POS_MSEC = cv2.cv.CV_CAP_PROP_POS_MSEC
 except AttributeError:
     CV_CAP_PROP_POS_MSEC = cv2.CAP_PROP_POS_MSEC
-
 
 
 class GyroStream(object):
@@ -221,7 +215,7 @@ class VideoStream(object):
             if self.flow_mode == 'rotation':
                 self._generate_frame_to_frame_rotation()
             elif self.flow_mode == 'optical':
-                self._flow = tracking.optical_flow_magnitude(self)
+                self._flow = tracking_new.frametoframe_track(self)
             else:
                 raise ValueError("No such flow mode '{}'".format(self.flow_mode))
             #self.__generate_flow()
@@ -232,16 +226,20 @@ class VideoStream(object):
         weights = []
         step = 1
         maxlen = step + 1
+
+        gftt_params = {
+            'max_corners': 500,
+            'quality_level': 0.07,
+            'min_distance': 10,
+        }
+
         frame_queue = collections.deque([], maxlen)
         for frame in self:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             frame_queue.append(frame)
             if len(frame_queue) == maxlen:
-                max_corners = 500
-                quality_level = 0.07  # Why??
-                min_distance = 10
-                initial_pts = cv2.goodFeaturesToTrack(frame_queue[0], max_corners, quality_level, min_distance)
-                pts, status = tracking.track_retrack(list(frame_queue), initial_pts)
+                initial_pts = features.feature_detection(frame_queue[0],gftt_params)
+                pts, status = tracking_new.track_retrack(list(frame_queue), initial_pts)
                 X = pts[:, 0, :].T
                 Y = pts[:, 1, :].T
                 threshold = 2.0

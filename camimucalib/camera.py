@@ -18,6 +18,7 @@ import numpy as np
 import cv2
 import scipy.interpolate
 
+# base class
 class CameraModel(object):
     """Class that describes a camera model
 
@@ -50,6 +51,7 @@ class CameraModel(object):
     def columns(self):
         return self.image_size[0]
 
+    # heritage by child class to implement
     def project(self, points):
         """Project 3D points to image coordinates.
 
