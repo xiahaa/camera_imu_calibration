@@ -202,15 +202,12 @@ class calibrator(object):
 
             return theta
         
-        inlier_selection_prob = 0.99
         model_points = 2 # select to not use minimal case
-        inlier_ratio = 0.5
         threshold = np.deg2rad(8.0)# tunable
-        max_iterations = int(np.log(1-inlier_selection_prob)/np.log(1-inlier_ratio**model_points))
         data = np.vstack((np.array(video_axes).T, np.array(gyro_axes).T))
         
-        R, _ = ransac.RANSAC(model_func,\
-            eval_func,data,model_points,max_iterations,threshold,recalculate=True)
+        R, _ = ransac.adaRANSAC(model_func,\
+            eval_func,data,model_points,threshold,recalculate=True)
         
         n, theta = rotations.rotation_matrix_to_axis_angle(R)
         rx, ry, rz = theta*n

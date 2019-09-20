@@ -24,6 +24,7 @@ calibration: ok
 
 ## things to notice：
 1. readout is not used for projection/backprojection.
+2. readout is finally used for optimization.
 
 ## todo
 1. numpy, scipy 

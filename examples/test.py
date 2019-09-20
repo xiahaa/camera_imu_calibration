@@ -59,7 +59,11 @@ video = camimucalib.VideoStream.from_file(camera, args.video)
 #video.display_video()
 #%%
 calib = camimucalib.calibration_new.calibrator(video,gyro)
-calib.initialize(gyro_rate=GYRO_RATE_GUESS,is_debug=True)
+try:
+    calib.initialize(gyro_rate=GYRO_RATE_GUESS,is_debug=True)
+except:
+    raise Exception('Initialization Failed')
+
 
 #%%
 #import matplotlib.pyplot as plt
