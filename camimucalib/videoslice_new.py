@@ -56,7 +56,7 @@ class Slice(object):
 
 def from_stream_randomly(video_stream, step_bounds=(5, 15), \
     length_bounds=(2, 15), max_start=None, min_distance=10, \
-        min_slice_points=10):       
+        min_slice_points=10,do_plot=False):       
         
         # lambda like a inline function
         new_step = lambda: int(np.random.uniform(low=step_bounds[0], high=step_bounds[1]))
@@ -86,7 +86,7 @@ def from_stream_randomly(video_stream, step_bounds=(5, 15), \
                 if len(seq_frames) == next_seq_length:
                     # detect features in the first frame
                     seq_start_points=features.feature_detection(seq_frames[0],gftt_params)
-                    points, status = tracking_new.track_retrack(seq_frames,seq_start_points)
+                    points, status = tracking_new.track_retrack(seq_frames,seq_start_points,do_plot=False)
                     valids = np.flatnonzero(status)
                     if len(valids) >= min_slice_points:
                         # consider this slice is good

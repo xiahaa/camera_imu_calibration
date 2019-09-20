@@ -12,7 +12,7 @@ from the output that the result looks ok.
 
 files done:
 calibration: ok
-timesync: ok
+~~timesync: ok~~
 ~~znccpyr.py~~
 ~~stream.py: ok~~
 ~~camera.py: ok~~
@@ -27,3 +27,15 @@ timesync: ok
 
 ## todo
 1. numpy, scipy 
+2. validate the modified version can output the same result
+3. compute flow, frame-to-frame rotation, plot
+4. rough estimation refinement: 
+5. consider if we don't know the readout time, can we estimate
+6. ~~check track-retrack plot to see if still large number of wrong tracks exist~~ (**track-retrack is very strong**)
+7. ~~save/load slice information, flow~~
+
+
+## python built-in
+list, tuple, range, dict, set
+datetime, collections, deque, heapqp, bisect
+math -- random, statistics

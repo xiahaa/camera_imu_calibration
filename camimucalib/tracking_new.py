@@ -4,8 +4,7 @@ import cv2
 import numpy as np 
 import logging
 from matplotlib import pyplot as plt
-import features
-
+from . import features
 logger = logging.getLogger('tracking')
 
 def frametoframe_track(imgseq, max_diff=60, gftt_options=[],do_plot=False):
@@ -67,7 +66,7 @@ def track(imgseq, initial_points, remove_bad = False,do_plot=False):
     tracks = np.zeros((initial_points.shape[0],len(imgseq),2),dtype=np.float32)
     # for broadcast
     tracks[:,0,:] = np.reshape(np.array(initial_points),[-1,2])
-    track_status = np.ones([np.size(initial_points.shape,0),1])
+    track_status = np.ones([np.size(initial_points,0),1])
     placeholder = np.array([])
     window_size = (5,5)
     for i in range(1,len(imgseq)):
@@ -118,7 +117,7 @@ def track(imgseq, initial_points, remove_bad = False,do_plot=False):
 
 def track_retrack(imgseq,initial_points,max_retrack_distance=0.5,keep_bad=False,do_plot=False):
     (forward_track, forward_status) = track(imgseq,initial_points,False,do_plot)
-    (backward_track, backward_status) = track(imgseq[::-1],forward_track[:,:,-1],False,do_plot)
+    (backward_track, backward_status) = track(imgseq[::-1],forward_track[:,-1,:],False,do_plot)
     
     ok_status = np.flatnonzero(forward_status * backward_status)
     # features in the first frame
@@ -130,6 +129,25 @@ def track_retrack(imgseq,initial_points,max_retrack_distance=0.5,keep_bad=False,
     # good track
     valids = np.flatnonzero(retrack_distance < max_retrack_distance)
     final_status = ok_status[valids]
+
+    if do_plot == True:
+        cv2.namedWindow('slice tracking',cv2.WINDOW_KEEPRATIO)
+        imgc = cv2.cvtColor(imgseq[-1],cv2.COLOR_GRAY2BGR)
+        corners1 = np.int0(forward_track[final_status,0,:])
+        corners2 = np.int0(forward_track[final_status,-1,:])
+        for i,j in zip(corners1,corners2):
+            x2,y2 = i.ravel()
+            x1,y1 = j.ravel()
+            cv2.circle(imgc,(x2,y2),5,(0,0,255),-1)
+            cv2.circle(imgc,(x1,y1),5,(0,255,255),-1)
+            cv2.line(imgc,(x1,y1),(x2,y2),(0,255,0),1)
+        imgc = cv2.resize(imgc,(640,480))
+        #plt.imshow(imgc), plt.show()
+        cv2.imshow('slice tracking',imgc)
+        cv2.waitKey(0)
+    # return flow strength
+    if do_plot == True:
+        cv2.destroyWindow('slice tracking')
     # 
     if not keep_bad:
         return (forward_track[final_status], forward_status[final_status])

@@ -23,3 +23,5 @@ setup.cfg
 data/*
 
 examples/test_on_np.py
+
+*.npy

@@ -2,16 +2,16 @@ from __future__ import absolute_import, print_function, division
 
 import numpy as np 
 from numpy.testing import assert_almost_equal
-import ransac
+from . import ransac
 
 def procrustes(X,Y,remove_mean=False):
     assert X.shape == Y.shape
     assert X.shape[0] > 1
 
-    if X.shape[0] == 2:
+    if X.shape[1] == 2:
         # cross product
-        X3 = np.cross(X[:,0],X[:,1],axis=0)
-        Y3 = np.cross(Y[:,0],Y[:,1],axis=0)
+        X3 = np.cross(X[:,0],X[:,1],axis=0).reshape((3,1))
+        Y3 = np.cross(Y[:,0],Y[:,1],axis=0).reshape((3,1))
         # hstack and norm
         X = np.hstack((X,X3/np.linalg.norm(X3)))
         Y = np.hstack((Y,Y3/np.linalg.norm(Y3)))
@@ -46,7 +46,7 @@ def rotation_matrix_to_axis_angle(R):
     assert R.shape==(3,3)
     assert_almost_equal(np.linalg.det(R),1,err_msg='Invalid R: det is not 1')
     S,V=np.linalg.eig(R)
-    k = np.min(np.abs(S-1))
+    k = np.argmin(np.abs(S-1))
     s = S[k]
     assert_almost_equal(s, 1, err_msg='eigen value shoud be close to 1')
     # force to real
@@ -54,8 +54,8 @@ def rotation_matrix_to_axis_angle(R):
 
     vhat = np.array([R[2,1]-R[1,2],R[0,2]-R[2,0],R[1,0]-R[0,1]])
     sintheta = 0.5 * np.dot(v,vhat)
-    costheta = 0.5 * cos(np.trace(R)-1)
-    theta = np.arctan(sintheta,costheta)
+    costheta = 0.5 * np.cos(np.trace(R)-1)
+    theta = np.arctan2(sintheta,costheta)
 
     return (v,theta)
 
@@ -77,7 +77,7 @@ def axis_angle_to_rotation_matrix(v, theta):
 
 def quat_to_rotation_matrix(q):
     q=q.flatten()
-    assert q.size() == 4
+    assert q.size == 4
     assert_almost_equal(np.linalg.norm(q),1,err_msg='invalid q')
     qq=q**2
     R = np.array([[qq[0] + qq[1] - qq[2] - qq[3], 2*q[1]*q[2] -

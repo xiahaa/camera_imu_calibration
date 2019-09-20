@@ -21,10 +21,8 @@ import numpy as np
 
 sys.path.insert(0,'./')
 
-import crisp
-import crisp.rotations
-#from crisp.calibration import PARAM_ORDER
-from crisp.calibration_new import PARAM_ORDER
+import camimucalib
+from camimucalib.calibration_new import PARAM_ORDER
 
 CAMERA_MATRIX = np.array(
     [[ 853.12703455,    0.        ,  988.06311256],
@@ -49,35 +47,19 @@ print(gyro_file)
 
 #%%
 print('Creating gyro stream from {}'.format(gyro_file))
-gyro = crisp.GyroStream.from_csv(gyro_file)
+gyro = camimucalib.GyroStream.from_csv(gyro_file)
 print('Post processing L3G4200D gyroscope data to remove frequency spike noise')
 gyro.prefilter(do_plot=False)
 
 #%%
-camera = crisp.AtanCameraModel(CAMERA_IMAGE_SIZE, CAMERA_FRAME_RATE, CAMERA_READOUT, CAMERA_MATRIX,
+camera = camimucalib.AtanCameraModel(CAMERA_IMAGE_SIZE, CAMERA_FRAME_RATE, CAMERA_READOUT, CAMERA_MATRIX,
                                    CAMERA_DIST_CENTER, CAMERA_DIST_PARAM)
 print('Creating video stream from {}'.format(args.video))
-video = crisp.VideoStream.from_file(camera, args.video)
+video = camimucalib.VideoStream.from_file(camera, args.video)
 #video.display_video()
 #%%
-# PARAM_SOURCE_ORDER = ('user', 'initialized', 'calibrated') # Increasing order of importance
-# PARAM_ORDER = ('gyro_rate', 'time_offset', 'gbias_x', 'gbias_y', 'gbias_z', 'rot_x', 'rot_y', 'rot_z')
-# D = {}
-# params = {
-#     'user' : {}, # Supplied by the user
-#     'initialized' : {}, # Estimated automatically by running initialize()
-#     'calibrated' : {} # Final calibrated values
-# }
-# for source in PARAM_SOURCE_ORDER:
-#     print(source)
-#     D.update(params[source])
-# params['user']['gyro_rate']=1
-# params['user']['video']=('1',1,'2',3)
-# print(params)
-#%%
-calib = crisp.calibration_new.calibrator(video,gyro)
-calib.initialize(gyro.data)
-
+calib = camimucalib.calibration_new.calibrator(video,gyro)
+calib.initialize(gyro_rate=GYRO_RATE_GUESS,is_debug=True)
 
 #%%
 #import matplotlib.pyplot as plt
