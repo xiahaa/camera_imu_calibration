@@ -30,14 +30,16 @@ files done:
 1. numpy, scipy 
 2. ~~validate the modified version can output the same result~~: seems correct
 3. ~~compute flow, frame-to-frame rotation, plot~~
-4. **rough estimation refinement: todo**
-5. **consider if we don't know the readout time, can we estimate**
+**readout is only useful for final optimization.**
 6. ~~check track-retrack plot to see if still large number of wrong tracks exist~~ (**track-retrack is very strong**)
 7. ~~save/load slice information, flow~~
 8. ~~use adaptive ransac~~
 9. padding or just skip
+10. ~~improve tracking via check mean distance~~
 10. ~~seems initialization is very important~~: yes, especially for time_offset and gyro freq, only difference at 1e-2 scale
 11. customized to my personal usage
+12. **rough estimation refinement: todo**
+5. **consider if we don't know the readout time, can we estimate**: 
 
 ## python built-in
 list, tuple, range, dict, set

@@ -29,6 +29,8 @@ from .imu_new import IMU
 from . import rotations
 from . import znccpyr
 
+# TODO: test scipy cross-correlation
+
 #--------------------------------------------------------------------------
 # Public functions
 #--------------------------------------------------------------------------

@@ -12,6 +12,8 @@ GFTT_PARAMS = {
     'min_distance': 10,
 }
 
+# other features can be add in the future
+
 def feature_detection(img, gftt_options=[]):
     # initialize gftt parameters
     if gftt_options:

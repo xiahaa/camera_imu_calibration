@@ -4,6 +4,8 @@ import numpy as np
 from numpy.testing import assert_almost_equal
 from . import ransac
 
+## TODO: add so3, 
+
 def procrustes(X,Y,remove_mean=False):
     assert X.shape == Y.shape
     assert X.shape[0] > 1
@@ -54,7 +56,7 @@ def rotation_matrix_to_axis_angle(R):
 
     vhat = np.array([R[2,1]-R[1,2],R[0,2]-R[2,0],R[1,0]-R[0,1]])
     sintheta = 0.5 * np.dot(v,vhat)
-    costheta = 0.5 * np.cos(np.trace(R)-1)
+    costheta = 0.5 * (np.trace(R)-1)
     theta = np.arctan2(sintheta,costheta)
 
     return (v,theta)

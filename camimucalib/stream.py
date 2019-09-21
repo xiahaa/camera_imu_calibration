@@ -215,7 +215,7 @@ class VideoStream(object):
             if self.flow_mode == 'rotation':
                 self._generate_frame_to_frame_rotation()
             elif self.flow_mode == 'optical':
-                self._flow = tracking_new.frametoframe_track(self)
+                self._flow = tracking_new.frametoframe_track(self, do_plot=False)
             else:
                 raise ValueError("No such flow mode '{}'".format(self.flow_mode))
             #self.__generate_flow()

@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from . import features
 logger = logging.getLogger('tracking')
 
-def frametoframe_track(imgseq, max_diff=60, gftt_options=[],do_plot=False):
+def frametoframe_track(imgseq, max_diff=10, gftt_options=[],do_plot=False):
     flow=[]
     prev_img = None
 
@@ -33,7 +33,8 @@ def frametoframe_track(imgseq, max_diff=60, gftt_options=[],do_plot=False):
         prev_points = prev_points[valids]
         # compute 
         distance = np.sqrt(np.sum((new_points-prev_points)**2,1))
-        valids = distance < max_diff
+        mean_distance = np.mean(distance,axis=0)
+        valids = np.abs(distance - mean_distance) < max_diff
         # return flow strength
         dm = np.mean(distance[valids])
         if np.isnan(dm):
@@ -44,8 +45,8 @@ def frametoframe_track(imgseq, max_diff=60, gftt_options=[],do_plot=False):
         if do_plot == True:
             cv2.namedWindow('frame to frame tracking',cv2.WINDOW_KEEPRATIO)
             imgc = cv2.cvtColor(img,cv2.COLOR_GRAY2BGR)
-            corners1 = np.int0(new_points)
-            corners2 = np.int0(prev_points)
+            corners1 = np.int0(new_points[valids])
+            corners2 = np.int0(prev_points[valids])
             for i,j in zip(corners1,corners2):
                 x2,y2 = i.ravel()
                 x1,y1 = j.ravel()

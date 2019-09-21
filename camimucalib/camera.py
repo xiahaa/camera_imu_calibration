@@ -18,6 +18,10 @@ import numpy as np
 import cv2
 import scipy.interpolate
 
+# we need this to deal with different camera model
+# since different camera model may have different project/unproject model
+# plus intrinsic parameters and how to add distorsion
+
 # base class
 class CameraModel(object):
     """Class that describes a camera model

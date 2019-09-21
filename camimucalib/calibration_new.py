@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import scipy.optimize
 import logging 
 import os
+import os.path
 logger = logging.getLogger('calib_xiahaa')
 
 from . import rotations, videoslice_new
@@ -122,7 +123,7 @@ class calibrator(object):
             time_offset = timesync.sync_camera_gyro(flow, \
                 flow_times, self.gyro.data.T, gyro_times, \
                     levels = pyramids,do_plot=True)
-
+            import os
             filename = os.path.join('./','tmp','time_offset.npy')
             np.save(filename,time_offset)
         else:
