@@ -13,9 +13,14 @@ from . import rotations, videoslice_new
 from . import tracking_new
 from . import timesync
 from . import ransac
+from . import imu_new
 
 PARAM_SOURCE_ORDER = ('user', 'initialized', 'calibrated') # Increasing order of importance
 PARAM_ORDER = ('gyro_rate', 'time_offset', 'gbias_x', 'gbias_y', 'gbias_z', 'rot_x', 'rot_y', 'rot_z')
+
+MAX_OPTIMIZATION_TRACKS = 1500
+MAX_OPTIMIZATION_FEV = 900
+DEFAULT_NORM_C = 3.0
 
 class calibrator(object):
     def __init__(self, video, gyro):
@@ -217,3 +222,180 @@ class calibrator(object):
         self.params['initialized']['rot_z'] = rz
 
         return R
+
+    def calibrate(self, max_tracks=MAX_OPTIMIZATION_TRACKS,\
+        max_eval = MAX_OPTIMIZATION_FEV, norm_c = DEFAULT_NORM_C):
+        # initialization optimization vectors
+        x0 = np.array([self.parameter[param] for param in PARAM_ORDER])
+        # for each slice, use tracked points to est R and reidentify inliers
+        available_tracks = np.sum([len(s.inliers) for s in self.slices])
+        if available_tracks < max_tracks:
+            warnings.warn('less valid tracks')
+            max_tracks = available_tracks
+        
+        # resampling
+        slice_sample_idxs = videoslice_new.fill_sampling(self.slices, max_tracks)
+
+        # arguments
+        func_args = (self.slices, slice_sample_idxs, \
+            self.video.camera_model, self.gyro, norm_c)
+        self.slice_sample_idxs = slice_sample_idxs
+
+        start_time = time.time()
+        leastsq_result = scipy.optimize.leastsq(\
+            optimization_func,
+            x0, args=func_args,full_output=True,
+            ftol=1e-10,
+            xtol=1e-10, maxfev=max_eval)# max_eval is the maximum number of iterations
+        elapsed = time.time() - start_time
+        # unpack result
+        x,covx,infodict,mesg,ier = leastsq_result
+        print('Optimization Completed in {:.1f} seconds and {:d} function evaluations. ier={},mesg={}'.format(elapsed,infodict['nfev'],ier,mesg))
+        if ier in (1,2,3,4):
+            for pname, val in zip(PARAM_ORDER,x):
+                self.params['calibrated'][pname] = val
+            return self.parameter
+        else:
+            raise Exception('Calibration Failed')
+
+# compute sample index and dt to nearest integer index
+def sample_at_time(t,rate):
+    s = t*rate - 0.5
+    n = int(np.floor(s))
+    tau = s - n
+    return n, tau
+
+# robust kernel for suppress the influence of outliers
+def robust_norm(r,c):
+    return r / (1+(np.abs(r)/c))
+
+def optimization_func(x, slices, slice_sample_idxs, camera, gyro, norm_c):
+    # unpack variables
+    Fg, offset, gbias_x, gbias_y, gbias_z, rot_x, rot_y, rot_z = x
+    # pack to a numpy array
+    gyro_bias = np.array([gbias_x,gbias_y,gbias_z])
+    # form rotation matrix
+    v = np.array([rot_x,rot_y,rot_z])
+    theta = np.linalg.norm(v)
+    v = v/theta
+    R_g2c = rotations.axis_angle_to_rotation_matrix(v,theta)
+    # gyro dt using updated rate
+    Tg = float(1.0/Fg) 
+    # dt per line scan
+    row_delta = camera.readout / camera.rows
+    # final errors
+    errors = []
+    # margin of integration is amount of gyro samples per frame
+    integration_margin = int(np.ceil(Fg*camera.readout))
+
+    for _slice, sample_idxs in zip(slices,slice_sample_idxs):
+        # now we have each slice and the inliers index we need to sample for this slice
+        if len(sample_idxs) < 1:
+            continue
+        
+        # synchronized time for the first frame in the slice
+        t_start = _slice.start / camera.frame_rate + offset
+        # synchonized time for the last frame in the slice
+        t_end = _slice.end / camera.frame_rate + offset
+        # index for synchronized gyro to slice start
+        slice_start,_ = sample_at_time(t_start, Fg)
+        # index for synchronized gyro to slice end
+        slice_end,_ = sample_at_time(t_end, Fg) 
+        #
+        slice_end+=1
+
+        # gyro samples to integrate within
+        integration_start = slice_start
+        # leave a margin since the initial offset is based on GS property
+        integration_end = slice_end + integration_margin
+
+        # handle extreme cases
+        if integration_start < 0 or integration_end >= gyro.num_samples:
+            num_local_samples = integration_end - integration_start + 1
+            gyro_part = np.empty((num_local_samples,3))
+            
+            # case 1
+            if integration_start < 0:
+                # padding
+                part_start = -integration_start
+                data_start = 0
+                # replicate padding
+                gyro_part[:part_start] = gyro.data[0]
+            else:
+                # padding
+                part_start = 0
+                data_start = integration_start
+            
+            # case 2
+            if integration_end >= gyro.num_samples:
+                # padding to the right
+                rpad_len = integration_end - gyro.num_samples + 1
+                if rpad_len < num_local_samples:
+                    gyro_part[-rpad_len:] = gyro.data[-1]
+                else:
+                    gyro_part[:] = gyro.data[-1]
+                part_end = -rpad_len
+                data_end = gyro.num_samples
+            else:
+                part_end = num_local_samples
+                data_end = integration_end + 1
+            # fetch gyro data
+            try:
+                gyro_part[part_start:part_end]=gyro.data[data_start:data_end]
+            except ValueError:
+                pass
+        else:
+            gyro_part=gyro.data[integration_start:integration_end+1]
+        # remove bias
+        gyro_part_unbiased = gyro_part + gyro_bias
+        # use updated integration time
+        q = imu_new.integrate_gyro_quaternion_uniform(gyro_part_unbiased,Tg)
+        
+        for track in _slice.points[sample_idxs]:
+            x = track[0]
+            y = track[-1]
+
+            # get row time
+            tx = t_start + x[1] * row_delta
+            ty = t_end + y[1] * row_delta
+
+            # sample index and interpolation value for point correspondence
+            nx, taux = sample_at_time(tx, Fg)# nearest but lower
+            ny, tauy = sample_at_time(ty, Fg)
+
+            # interpolation using slerp
+            a = nx - integration_start # index relative to the buffer
+            b = ny - integration_start
+            qx = rotations.slerp(q[a],q[a+1],taux)
+            qy = rotations.slerp(q[b],q[b+1],tauy)
+
+            # to rotation matrix
+            Rx = rotations.quat_to_rotation_matrix(qx)
+            Ry = rotations.quat_to_rotation_matrix(qy)
+            dR = np.dot(Rx.T,Ry)
+            # TODO: what is the definition of the rotation exactly
+            R = R_g2c.dot(dR).dot(R_g2c.T)
+            Y = camera.unproject(y)
+            Xhat = np.dot(R,Y)
+            xhat = camera.project(Xhat)
+
+            # compute err and append to errrors
+            err = x - xhat.flatten()
+            errors.extend(err.flatten())
+
+            # symmetric errors
+            dR1 = np.dot(Ry.T, Rx)
+            R1 = R_g2c.dot(dR1).dot(R_g2c.T)
+            X = camera.unproject(x)
+            Yhat = np.dot(R1,X)
+            yhat = camera.project(Yhat)
+
+            err = y - yhat.flatten()
+            errors.extend(err.flatten())
+    if not errors:
+        raise ValueError('No residuals')
+    # apply robust norm
+    robust_errors = robust_norm(np.array(errors),norm_c)
+
+    return robust_errors
+

@@ -11,7 +11,7 @@ from the output that the result looks ok.
 
 
 files done:
-calibration: ok
+~~calibration: ok~~
 ~~timesync: ok~~
 ~~znccpyr.py~~
 ~~stream.py: ok~~
@@ -28,15 +28,31 @@ calibration: ok
 
 ## todo
 1. numpy, scipy 
-2. validate the modified version can output the same result
-3. compute flow, frame-to-frame rotation, plot
-4. rough estimation refinement: 
-5. consider if we don't know the readout time, can we estimate
+2. ~~validate the modified version can output the same result~~: seems correct
+3. ~~compute flow, frame-to-frame rotation, plot~~
+4. **rough estimation refinement: todo**
+5. **consider if we don't know the readout time, can we estimate**
 6. ~~check track-retrack plot to see if still large number of wrong tracks exist~~ (**track-retrack is very strong**)
 7. ~~save/load slice information, flow~~
-
+8. ~~use adaptive ransac~~
+9. padding or just skip
+10. ~~seems initialization is very important~~: yes, especially for time_offset and gyro freq, only difference at 1e-2 scale
+11. customized to my personal usage
 
 ## python built-in
 list, tuple, range, dict, set
 datetime, collections, deque, heapqp, bisect
 math -- random, statistics
+os: files and structures.
+
+### warning
+warnings.warn(message)
+message could be format as
+'this is a warning {:d} - {:f}'.format(a,b)
+
+### future
+always add
+from __future__ import print_function, division, absolute_import
+
+### threading
+lock, semaphore, queue

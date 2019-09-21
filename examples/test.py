@@ -22,6 +22,7 @@ import numpy as np
 sys.path.insert(0,'./')
 
 import camimucalib
+from camimucalib import rotations
 from camimucalib.calibration_new import PARAM_ORDER
 
 CAMERA_MATRIX = np.array(
@@ -64,6 +65,28 @@ try:
 except:
     raise Exception('Initialization Failed')
 
+calib.calibrate()
+
+
+# Compare with reference data
+reference_data = np.loadtxt(reference_file, delimiter=',')
+reference_data[[2,3,4,5,6,7]] = reference_data[[5,6,7,2,3,4]] # Swap order of bias and rot
+param_data = np.array([calib.parameter[p] for p in PARAM_ORDER])
+print('\nCompare with reference data')
+print()
+print('{:^15s} {:^12s} {:^12s} {:^12s}'.format('Parameter', 'Reference', 'Optimized', 'Difference'))
+for param, ref, data in zip(PARAM_ORDER, reference_data, param_data):
+    print("{:>15s}  {:E}  {:E}  {:E}".format(param, ref, data, ref-data))
+
+R_ref = rotations.to_rot_matrix(reference_data[5:])
+R_data = rotations.to_rot_matrix(param_data[5:])
+dR = np.dot(R_ref.T, R_data)
+v, theta = rotations.rotation_matrix_to_axis_angle(dR)
+print('Reference rotation')
+print(R_ref)
+print('Optimized rotation')
+print(R_data)
+print("Angle difference: {:.4f} degrees".format(np.rad2deg(theta)))
 
 #%%
 #import matplotlib.pyplot as plt
