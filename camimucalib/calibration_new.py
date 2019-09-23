@@ -312,39 +312,8 @@ def optimization_func(x, slices, slice_sample_idxs, camera, gyro, norm_c):
 
         # handle extreme cases
         if integration_start < 0 or integration_end >= gyro.num_samples:
-            num_local_samples = integration_end - integration_start + 1
-            gyro_part = np.empty((num_local_samples,3))
-            
-            # case 1
-            if integration_start < 0:
-                # padding
-                part_start = -integration_start
-                data_start = 0
-                # replicate padding
-                gyro_part[:part_start] = gyro.data[0]
-            else:
-                # padding
-                part_start = 0
-                data_start = integration_start
-            
-            # case 2
-            if integration_end >= gyro.num_samples:
-                # padding to the right
-                rpad_len = integration_end - gyro.num_samples + 1
-                if rpad_len < num_local_samples:
-                    gyro_part[-rpad_len:] = gyro.data[-1]
-                else:
-                    gyro_part[:] = gyro.data[-1]
-                part_end = -rpad_len
-                data_end = gyro.num_samples
-            else:
-                part_end = num_local_samples
-                data_end = integration_end + 1
-            # fetch gyro data
-            try:
-                gyro_part[part_start:part_end]=gyro.data[data_start:data_end]
-            except ValueError:
-                pass
+            # just skip
+            continue
         else:
             gyro_part=gyro.data[integration_start:integration_end+1]
         # remove bias

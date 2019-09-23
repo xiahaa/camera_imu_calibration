@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from . import features
 logger = logging.getLogger('tracking')
 
-def frametoframe_track(imgseq, max_diff=10, gftt_options=[],do_plot=False):
+def frametoframe_track(imgseq, max_diff=60, gftt_options=[],do_plot=False):
     flow=[]
     prev_img = None
 
@@ -34,7 +34,7 @@ def frametoframe_track(imgseq, max_diff=10, gftt_options=[],do_plot=False):
         # compute 
         distance = np.sqrt(np.sum((new_points-prev_points)**2,1))
         mean_distance = np.mean(distance,axis=0)
-        valids = np.abs(distance - mean_distance) < max_diff
+        valids = np.abs(distance) < max_diff
         # return flow strength
         dm = np.mean(distance[valids])
         if np.isnan(dm):
@@ -117,8 +117,8 @@ def track(imgseq, initial_points, remove_bad = False,do_plot=False):
     return (tracks,track_status)
 
 def track_retrack(imgseq,initial_points,max_retrack_distance=0.5,keep_bad=False,do_plot=False):
-    (forward_track, forward_status) = track(imgseq,initial_points,False,do_plot)
-    (backward_track, backward_status) = track(imgseq[::-1],forward_track[:,-1,:],False,do_plot)
+    (forward_track, forward_status) = track(imgseq,initial_points,False,do_plot=False)
+    (backward_track, backward_status) = track(imgseq[::-1],forward_track[:,-1,:],False,do_plot=False)
     
     ok_status = np.flatnonzero(forward_status * backward_status)
     # features in the first frame
@@ -145,7 +145,7 @@ def track_retrack(imgseq,initial_points,max_retrack_distance=0.5,keep_bad=False,
         imgc = cv2.resize(imgc,(640,480))
         #plt.imshow(imgc), plt.show()
         cv2.imshow('slice tracking',imgc)
-        cv2.waitKey(0)
+        cv2.waitKey(10)
     # return flow strength
     if do_plot == True:
         cv2.destroyWindow('slice tracking')

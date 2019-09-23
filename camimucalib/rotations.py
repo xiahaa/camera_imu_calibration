@@ -247,3 +247,21 @@ def to_rot_matrix(r):
 
 
     
+def angle2dcm(angle):
+    assert angle.shape[0] == 3
+    # assume the rotation roder is ZYX
+    yaw = angle[0]
+    pitch = angle[1]
+    roll = angle[2]
+    R1 = np.array(([np.cos(yaw), np.sin(yaw), 0],[-np.sin(yaw),np.cos(yaw),0],[0,0,1]))
+    R2 = np.array(([np.cos(pitch), 0, -np.sin(pitch)],[0,1,0],[np.sin(pitch),0,np.cos(pitch)]))
+    R3 = np.array(([1,0,0],[0,np.cos(roll),np.sin(roll)],[0,-np.sin(roll),np.cos(roll)]))
+    R = R3.dot(R2).dot(R1)
+    return R
+
+def dcm2angle(R):
+    angle = np.zeros(3)
+    angle[0]=np.arctan2(R[0,1],R[0,0])
+    angle[1]=-np.arcsin(R[0,2])
+    angle[2]=np.arctan2(R[1,2],R[2,2])
+    return angle
