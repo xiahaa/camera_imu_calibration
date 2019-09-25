@@ -290,17 +290,6 @@ def create_gaussian_pyramid(time_series,octaves,sigma=10):
             ts_blur = ts_blur[id1:id1+len(pyr_out[-1])]
         # downsample
         ts_out = ts_blur[::downsample_factor]
-        # Ns = np.int(np.floor(np.size(ts_blur)/downsample_factor))
-        # ts_out = np.zeros((Ns), dtype='float64')
-        # for k in range(0,Ns):
-        #     cpos  = (k+.5)*downsample_factor-.5
-        #     cfrac = cpos-np.floor(cpos)
-        #     cind  = int(np.floor(cpos))
-        #     if cfrac>0:
-        #         ts_out[k]=ts_blur[cind]*(1-cfrac)+ts_blur[cind+1]*cfrac
-        #     else:
-        #         ts_out[k]=ts_blur[cind]
-
         # append
         pyr_out.append(ts_out)
         
