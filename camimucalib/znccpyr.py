@@ -32,7 +32,7 @@ def gaussian_kernel(gstd):
             Array with kernel coefficients
     """
     Nc = np.ceil(gstd*3)*2+1
-    x = np.linspace(-(Nc-1)/2,(Nc-1)/2,Nc,endpoint=True)
+    x = np.linspace(-(Nc-1)/2,(Nc-1)/2,Nc,endpoint=True,dtype=np.float64)
     g = np.exp(-.5*((x/gstd)**2))
     g = g/np.sum(g)
 
@@ -263,6 +263,7 @@ def find_shift_pyr(ts1,ts2,nlevels):
        ts1_shift : float
                How many samples to shift ts1 to align with ts2
     """
+
     pyr1 = create_pyramid(ts1,nlevels)
     pyr2 = create_pyramid(ts2,nlevels)
     
@@ -276,3 +277,81 @@ def find_shift_pyr(ts1,ts2,nlevels):
         ishift, corrfn = refine_correlation(pyr1[-k-1],pyr2[-k-1],ishift*2)
 
     return ishift
+
+def create_gaussian_pyramid(time_series,octaves,sigma=10):
+    pyr_out = [time_series ]
+    kernel = gaussian_kernel(sigma)
+    downsample_factor = 2
+    for k in range(0,octaves):
+        # blur
+        ts_blur = np.convolve(pyr_out[-1],kernel,'same')
+        if len(pyr_out[-1]) < len(kernel):
+            id1 = int(np.round((len(kernel) - len(pyr_out[-1])+0.5)*0.5))
+            ts_blur = ts_blur[id1:id1+len(pyr_out[-1])]
+        # downsample
+        ts_out = ts_blur[::downsample_factor]
+        # Ns = np.int(np.floor(np.size(ts_blur)/downsample_factor))
+        # ts_out = np.zeros((Ns), dtype='float64')
+        # for k in range(0,Ns):
+        #     cpos  = (k+.5)*downsample_factor-.5
+        #     cfrac = cpos-np.floor(cpos)
+        #     cind  = int(np.floor(cpos))
+        #     if cfrac>0:
+        #         ts_out[k]=ts_blur[cind]*(1-cfrac)+ts_blur[cind+1]*cfrac
+        #     else:
+        #         ts_out[k]=ts_blur[cind]
+
+        # append
+        pyr_out.append(ts_out)
+        
+    return pyr_out
+
+def coarse_to_fine_corr(ts1, ts2, sigma = 10, nlevels=8):
+    ts1=np.reshape(ts1,(ts1.shape[0]))
+    ts2=np.reshape(ts2,(ts2.shape[0]))
+    # create gaussian pyramid
+    ts1_pyr = create_gaussian_pyramid(ts1,nlevels,sigma)
+    ts2_pyr = create_gaussian_pyramid(ts2,nlevels,sigma)
+    # coarse-to-fine correlation
+    n = int(np.size(ts1_pyr[-1]))
+    # r = signal.correlate(ts1_pyr[-1], ts2_pyr[-1])
+    # shift = np.argmax(r)-len(ts2_pyr[-1]) + 1
+    shifts = call_correlate(ts1_pyr[-1], ts2_pyr[-1], ret_num=1)
+    for k in range(nlevels-1,-1,-1):
+        n = int(max(np.round((n+0.5)*0.5),1))
+        for i, shift in enumerate(shifts):        
+            if shift > 0:
+                newshift = shift
+                sig1 = ts1_pyr[k][max(newshift*2-1,0):]
+                sig2 = ts2_pyr[k][0:(len(ts2_pyr[k])-2*newshift)]
+                dshift = call_correlate(sig1, sig2, ret_num=1, maxlag=n)
+                # np.argmax(signal.correlate(sig1, sig2,method='fft'))
+            else:
+                newshift = shift
+                sig1 = ts1_pyr[k][0:(len(ts1_pyr[k])+2*newshift+1)]
+                sig2 = ts2_pyr[k][max(-newshift*2-1,0):]
+                # r = signal.correlate(sig1, sig2)
+                # sig1 = ts1_pyr[k]
+                # sig2 = ts2_pyr[k]
+                # ind = int(len(r) * 0.5)
+                # r = r[ind-n:ind+n]
+                # dshift = np.argmax(r)-len(r) + 1
+                dshift = call_correlate(sig1, sig2, ret_num=1, maxlag=n)
+            shifts[i] = shifts[i] * 2 + dshift
+    # return ts_out
+    shift = shifts.max()
+    return shift
+
+def call_correlate(sig1,sig2,ret_num=3, maxlag=None):
+    import scipy.signal as signal
+    r = signal.correlate(sig1, sig2)
+    if not maxlag is None:
+        id1 = int(len(sig2))
+        r = r[id1-1-maxlag:id1+maxlag]
+        dshifts = r.argsort()[-int(ret_num):][::-1]
+        dshifts = dshifts - maxlag
+    else:
+        dshifts = r.argsort()[-int(ret_num):][::-1]
+        dshifts = dshifts - len(sig2) + 1
+    
+    return dshifts
