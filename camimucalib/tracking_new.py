@@ -15,9 +15,17 @@ def frametoframe_track(imgseq, max_diff=60, gftt_options=[],do_plot=False):
         if img.ndim == 3 and img.shape[2] == 3:
             # to gray-scale
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        scale_percent = 50 # percent of original size
+        width = int(img.shape[1] * scale_percent / 100)
+        height = int(img.shape[0] * scale_percent / 100)
+        dim = (width, height)
+        # test is low resolution image can still work
+        img = cv2.resize(img, dim)
+
         if prev_img is None:
             prev_img = img
             continue
+
         # detect features in previous img
         prev_points = features.feature_detection(prev_img)
 
