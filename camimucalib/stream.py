@@ -137,7 +137,7 @@ class VideoStream(object):
         raise NotImplementedError("{} does not implement the _frames() method used to extract frames".format(self.__class__.__name__))
 
     @classmethod
-    def from_file(cls, camera_model, filename):
+    def from_file(cls, camera_model, filename, start_time=0, duration = None):
         """Create stream automatically from filename.
 
         Note
@@ -157,7 +157,7 @@ class VideoStream(object):
             Video stream of a suitable sub class
         """
         # TODO: Other subclasses
-        return OpenCvVideoStream(camera_model, filename)
+        return OpenCvVideoStream(camera_model, filename, start_time=start_time, duration=duration)
 
     def project(self, points):
         """Project 3D points to image coordinates.
@@ -198,7 +198,7 @@ class VideoStream(object):
         cv2.namedWindow('video', 0)
         cv2.resizeWindow('video',640,480)
         for frame in self:
-            frame_show=cv2.imresize(frame,640,480)
+            frame_show=cv2.resize(frame,(640,480))
             cv2.imshow('video',frame_show)
             cv2.waitKey(1)
         cv2.destroyWindow('video')
@@ -215,11 +215,72 @@ class VideoStream(object):
             if self.flow_mode == 'rotation':
                 self._generate_frame_to_frame_rotation()
             elif self.flow_mode == 'optical':
-                self._flow = tracking_new.frametoframe_track(self, do_plot=False)
+                self._flow = tracking_new.frametoframe_track(self, do_plot=True)
             else:
                 raise ValueError("No such flow mode '{}'".format(self.flow_mode))
             #self.__generate_flow()
         return self._flow
+
+    def _est_frame_to_frame_rotation(self):
+        rotation = []
+        weights = []
+        step = 1
+        maxlen = step + 1
+
+        gftt_params = {
+            'max_corners': 300,
+            'quality_level': 0.07,
+            'min_distance': 10,
+        }
+        import random as rnd
+        frame_queue = collections.deque([], maxlen)
+        for frame in self:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            frame_queue.append(frame)
+            if len(frame_queue) == maxlen:
+                initial_pts = features.feature_detection(frame_queue[0],gftt_params)
+                pts, status = tracking_new.track_retrack(list(frame_queue), initial_pts, max_retrack_distance=1.5)
+                X = pts[:, 0, :].T
+                Y = pts[:, 1, :].T
+
+                X1 = self.camera_model.undistort(X)
+                Y1 = self.camera_model.undistort(Y)
+
+                E,inliers=cv2.findEssentialMat(X1.T,Y1.T, 1.0, pp=(0,0), method=cv2.RANSAC, prob=0.99, threshold=1.0)
+                retval, R, t, mask = cv2.recoverPose(E, X1.T,Y1.T)
+
+                # 4 possible solution, select one
+                #pt = X[:,rnd.randint(0,X.shape[1])]
+                #pt3d = self.camera_model.unproject(pt)
+                #q3d = R1*pt3d
+                # if q3d[2] > 0:
+                #     R = R1
+                # else:
+                #     R = R2
+                weight = (1.0 * retval) / X.shape[1]
+                axis, angle = rotations.rotation_matrix_to_axis_angle(R)
+                r = axis * angle
+
+                print('angle: %f'%angle)
+
+                rotation.append(r.reshape(3, 1))
+                weights.append(weight)
+
+        rotation = np.hstack(rotation)
+        weights = np.array(weights)
+
+        # Scale from rad/frame to rad/s
+        rotation *= self.camera_model.frame_rate
+
+        # Remove and interpolate bad values
+        threshold = 0.2
+        mask = weights > threshold
+        x = np.arange(rotation.shape[1])
+        for i in range(3):
+            rotation[i, ~mask] = np.interp(x[~mask], x[mask], rotation[i, mask])
+
+        self._frame_rotations = rotation
+        self._flow = np.linalg.norm(rotation, axis=0)
 
     def _generate_frame_to_frame_rotation(self):
         rotation = []
@@ -239,11 +300,15 @@ class VideoStream(object):
             frame_queue.append(frame)
             if len(frame_queue) == maxlen:
                 initial_pts = features.feature_detection(frame_queue[0],gftt_params)
-                pts, status = tracking_new.track_retrack(list(frame_queue), initial_pts)
+                pts, status = tracking_new.track_retrack(list(frame_queue), initial_pts,do_plot=True)
                 X = pts[:, 0, :].T
                 Y = pts[:, 1, :].T
                 threshold = 2.0
                 R, _, err, inliers = rotations.estimate_rotation_procrustes_ransac(X, Y, self.camera_model, threshold)
+
+                if not R is None:     
+                    print('mean error:%d %f'%(inliers.shape[0],np.mean(err[inliers])))
+
                 if R is None:
                     weight = 0
                     angle = 0
@@ -329,3 +394,107 @@ class OpenCvVideoStream(VideoStream):
                 pass # Loop will end normally
             t = vc.get(CV_CAP_PROP_POS_MSEC)
             counter += 1
+
+from liegroups import SO3
+
+class IMU_Stream(object):
+    def __init__(self):
+        self.GPSTime = None     # gps timestamp
+        self.p = None          # local px, py, pz
+        self.vb = None         # velocity body x,y,z
+        self.ab = None         # acceleration body x,y,z
+        self.roll = None        # roll angle
+        self.pitch = None       # pitch
+        self.yaw = None         # yaw
+        self.w = None          # angular velocity x,y,z
+        self.acc_bias = None  
+        self.gyro_bias = None 
+        self.dt = None
+        self.vg = None
+        self.ag = None
+
+    @classmethod
+    def from_mat(cls, matfile, start_time=0):
+        instance = cls()
+        import scipy.io as sio
+        imudata = sio.loadmat(matfile)
+        
+        # convert to local time
+        localtime = imudata['imugps'][:,0] - imudata['imugps'][0,0]
+        valids = localtime >= start_time
+
+        instance.GPSTime = imudata['imugps'][valids,0]
+        instance.p = imudata['imugps'][valids,1:4]
+        instance.vb = imudata['imugps'][valids,4:7]
+        instance.ab = imudata['imugps'][valids,7:10]
+        instance.roll = imudata['imugps'][valids,10]
+        instance.pitch = imudata['imugps'][valids,11]
+        instance.yaw = imudata['imugps'][valids,12]
+        instance.w = imudata['imugps'][valids,13:16]
+        instance.acc_bias = imudata['imugps'][valids,16:19]
+        instance.gyro_bias = imudata['imugps'][valids,19:22]
+
+        # compute dt
+        dts = instance.GPSTime[2:-1] - instance.GPSTime[1:-2]
+        instance.dt = np.mean(dts,axis=0)
+
+        # from angle to rad
+        instance.roll = instance.roll * np.pi / 180.0
+        instance.pitch = instance.pitch * np.pi / 180.0
+        instance.yaw = instance.yaw * np.pi / 180.0
+
+        instance.w = instance.w * np.pi / 180.0
+        instance.gyro_bias = instance.gyro_bias * np.pi / 180.0
+
+        instance.get_vg_ag()
+
+        instance.w = notch_filter(instance.w.T).T
+
+        print('num of samples:%d'%(instance.GPSTime.shape[0]))
+
+        return instance
+    @property
+    def num_samples(self):
+        return self.GPSTime.shape[0]
+
+    # TODO: implement integration, filtering
+    # 
+    def get_vg_ag(self):
+        self.vg = np.empty_like(self.vb)
+        self.ag = np.empty_like(self.ab)
+        for i in range(self.vb.shape[0]):
+            R = rotations.angle2dcm(np.array([self.yaw[i],self.pitch[i],self.roll[i]]))
+            vb = self.vb[i,:].T
+            vg = R.dot(vb)
+            self.vg[i,:]=vg.T
+            ab = self.ab[i,:].T 
+            ag = R.dot(ab)
+            self.ag[i,:] = ag.T
+    
+def notch_filter(data):
+    def notch(Wn, bandwidth):
+        f = Wn/2.0
+        R = 1.0 - 3.0*(bandwidth/2.0)
+        K = ((1.0 - 2.0*R*np.cos(2*np.pi*f) + R**2)/(2.0 -
+        2.0*np.cos(2*np.pi*f)))
+        b,a = np.zeros(3),np.zeros(3)
+        a[0] = 1.0
+        a[1] = - 2.0*R*np.cos(2*np.pi*f)
+        a[2] = R**2
+        b[0] = K
+        b[1] = -2*K*np.cos(2*np.pi*f)
+        b[2] = K
+        return b,a
+
+    # Remove strange high frequency noise and bias
+    b,a = notch(0.5, 0.5)
+    data_filtered = np.empty_like(data)
+    # use built-in filter?
+    from scipy.signal import filtfilt
+    for i in range(3):
+        data_filtered[i] = filtfilt(b, a, data[i])
+
+    return data_filtered
+
+    
+    
