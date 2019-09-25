@@ -108,23 +108,49 @@ def sync_camera_gyro(image_sequence_or_flow, image_timestamps, \
         rel_rate = freq_image / freq_gyro
         gyro_mag = znccpyr.upsample(gyro_mag, rel_rate)
 
+    import scipy.io as sio 
+    sio.savemat('./sig.mat',{'flow':flow_mag, 'gyro': gyro_mag})
+
+#     idseg1 = np.flatnonzero(flow_mag>(0.1*np.mean(flow_mag)))
+#     idseg2 = np.flatnonzero(gyro_mag>(0.1*np.mean(gyro_mag)))
+#     flow_mag_zncc = flow_mag[idseg1[0]:idseg1[-1]+1]
+#     gyro_mag_zncc = gyro_mag[idseg2[0]:idseg2[-1]+1]
+
+    # semi-autonomous
+    # flow_ids, gyro_ids = manual_sync_pick(flow_org, gyro_timestamps, gyro_mag)
+    # flow_mag_s = flow_mag[flow_ids[0]:flow_ids[-1]+1]
+    # gyro_mag_s = gyro_mag[gyro_ids[0]:gyro_ids[-1]+1]
+
+    ishift2 = znccpyr.coarse_to_fine_corr(flow_mag,gyro_mag,12,6)
     ishift = znccpyr.find_shift_pyr(flow_mag, gyro_mag, levels)
+    ishift = ishift2
 
+#     if ishift < 0:
+#         if freq_gyro > freq_image:
+#             flow_shift = int(-ishift / rel_rate)
+#         else:
+#             flow_shift = int(-ishift)
+#         # time_offset = flow_timestamps[flow_shift]
+#         time_offset = flow_shift * 1.0 / freq_image
+#     else:
+#         # if freq_gyro > freq_image:
+#         #     flow_shift = int(ishift / rel_rate)
+#         # else:
+#         #     flow_shift = int(ishift)
+#         # time_offset = -flow_timestamps[flow_shift]
+#         time_offset = flow_shift * 
     if freq_gyro > freq_image:
-        flow_shift = int(-ishift / rel_rate)
+        time_offset = -ishift * 1.0/freq_gyro
     else:
-        flow_shift = int(-ishift)
-
-    time_offset = flow_timestamps[flow_shift]
-    
+        time_offset = -ishift * 1.0/freq_image
     # First pick good points in flow
     if do_plot == True:
         plt.clf()
         plt.subplot(211)
-        plt.plot(flow_timestamps, flow_org[:-2], 'r-')
+        plt.plot(flow_timestamps, flow_org[:-2]/20, 'r-')
         plt.plot(gyro_timestamps, gyro_mag, 'b-')
         plt.subplot(212)
-        plt.plot(flow_timestamps+time_offset, flow_org[:-2], 'r-')
+        plt.plot(flow_timestamps+time_offset, flow_org[:-2]/20, 'r-')
         plt.plot(gyro_timestamps, gyro_mag, 'b-')
         plt.draw()
         plt.waitforbuttonpress(timeout=1000.0)
@@ -183,7 +209,7 @@ def sync_camera_gyro_manual(image_sequence, image_timestamps, gyro_data, gyro_ti
             The frame pair that was picked for synchronization
     """
 
-    flow = tracking.optical_flow_magnitude(image_sequence)
+    flow = tracking_new.frametoframe_track(image_sequence)
     flow_timestamps = image_timestamps[:-2]
 
     # Let user select points in both pieces of data
@@ -245,7 +271,7 @@ def manual_sync_pick(flow, gyro_ts, gyro_data):
     plt.draw()
     selected = plt.ginput(2) #[int(round(x[0])) for x in plt.ginput(2)]
     gyro_idxs = [(gyro_ts >= x[0]).nonzero()[0][0] for x in selected]
-    plt.plot(gyro_ts[gyro_idxs], gyro_data[:, gyro_idxs].T, 'ro')
+    plt.plot(gyro_ts[gyro_idxs], gyro_data[gyro_idxs], 'ro')
     plt.title('Ok, click to continue to next')
     plt.draw()
     plt.waitforbuttonpress(timeout=10.0)
