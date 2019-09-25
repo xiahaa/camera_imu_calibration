@@ -14,12 +14,20 @@ GFTT_PARAMS = {
 
 # other features can be add in the future
 
-def feature_detection(img, gftt_options=[]):
+def feature_detection(img, gftt_options=[], use_mask = True):
     # initialize gftt parameters
     if gftt_options:
         gftt_params = gftt_options
     else:
         gftt_params = GFTT_PARAMS
+
+    if use_mask:
+        mask = np.zeros_like(img)
+        rows = img.shape[0]
+        cols = img.shape[1]
+        # mask out bottom 200 lines
+        mask[:-200] = 1
+
     features = cv2.goodFeaturesToTrack(img,gftt_params['max_corners'], \
-        gftt_params['quality_level'],gftt_params['min_distance'])
+        gftt_params['quality_level'],gftt_params['min_distance'],mask=mask)
     return features
