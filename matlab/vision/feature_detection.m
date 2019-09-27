@@ -10,6 +10,8 @@ function features = feature_detection(img, varargin)
     
     if nargin >= 3
         use_mask = varargin{2};
+    else
+        use_mask = false;
     end
     
     if use_mask
