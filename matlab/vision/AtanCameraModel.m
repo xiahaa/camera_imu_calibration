@@ -7,8 +7,8 @@ classdef AtanCameraModel < Camera
     end
     
     methods
-        function obj = AtanCameraModel(camera_matrix, dist_center, dist_param, ...
-                image_size, frame_rate, readout)
+        function obj = AtanCameraModel(image_size, frame_rate, readout, ...
+            camera_matrix, dist_center, dist_param)
             obj@Camera(image_size,frame_rate,readout);
             obj.camera_matrix = camera_matrix;
             obj.inv_camera_matrix = inv(obj.camera_matrix);
@@ -21,7 +21,7 @@ classdef AtanCameraModel < Camera
             wy = obj.wc(2);
             % Switch to polar coordinates
             rn = sqrt((points(1,:) - wx).^2+(points(2,:) - wy).^2);
-            phi = arctan2(points(2,:) - wy,points(1,:) - wx);
+            phi = atan2(points(2,:) - wy,points(1,:) - wx);
             r = tan(rn * obj.lgamma) / obj.lgamma; % atan method
             unpoints = points;
             unpoints(1,:) = [wx + r.*cos(phi)];
@@ -32,8 +32,8 @@ classdef AtanCameraModel < Camera
             wx = obj.wc(1);
             wy = obj.wc(2);
             rn = sqrt((undisotpoints(1,:) - wx).^2+(undisotpoints(2,:) - wy).^2);
-            phi = arctan2(undisotpoints(2,:) - wy,undisotpoints(1,:) - wx);
-            r = arctan(rn * obj.lgamma) / obj.lgamma;
+            phi = atan2(undisotpoints(2,:) - wy,undisotpoints(1,:) - wx);
+            r = atan(rn * obj.lgamma) / obj.lgamma;
             distortpoints = [wx+r.*cos(phi);wy+r.*sin(phi)];
         end
         
@@ -50,7 +50,7 @@ classdef AtanCameraModel < Camera
             imgpoints = [imgpoints;ones(1,size(imgpoints,2))];
             objpoints = obj.inv_camera_matrix * imgpoints;
             objpoints = objpoints ./ objpoints(3,:);
-            objpoints = undistort(objpoints);
+            objpoints = obj.undistort(objpoints);
         end        
     end
 end
