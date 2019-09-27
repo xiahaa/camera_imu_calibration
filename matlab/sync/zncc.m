@@ -50,12 +50,12 @@ classdef zncc
                 if cfrac>0
                     ts_out(k)=ts_blur(cind)*(1-cfrac)+ts_blur(cind+1)*cfrac;
                 else
-                    ts_out(k)=ts_blur(cind)
+                    ts_out(k)=ts_blur(cind);
                 end
             end
         end
         
-        function ts_out = upsample(time_series, scaling_factor):
+        function ts_out = upsample(time_series, scaling_factor)
             % """Upsample using linear interpolation
             %
             % The function uses replication of the value at edges
@@ -73,12 +73,12 @@ classdef zncc
             %         The upsampled signal
             % """
             Ns0 = length(time_series);
-            Ns  = int(floor(Ns0*scaling_factor));
+            Ns  = int32(floor(Ns0*scaling_factor));
             ts_out = zeros(Ns,1);
             for k = 1:Ns
-                cpos  = int(min([Ns0-1,max([0.,(k+0.5)/scaling_factor-0.5])]));
+                cpos  = int32(min([Ns0-1,max([0.,(k+0.5)/scaling_factor-0.5])]));
                 cfrac = cpos-floor(cpos);
-                cind  = max(1,int(floor(cpos)));
+                cind  = max(1,int32(floor(cpos)));
                 if cfrac>0
                     ts_out(k)=time_series(cind)*(1-cfrac)+time_series(cind+1)*cfrac;
                 else
@@ -284,20 +284,20 @@ classdef zncc
             end
         end
         
-        function toff = coarse_to_fine_corr(ts1,ts2,varargin)
+        function toff = coarse_to_fine_corr(x,y,varargin)
             if nargin >= 3
                 sigma = varargin{1};
             else
                 sigma = 10;
             end
             if nargin >=4
-                nlevels = varargin{2};
+                pyradmids = varargin{2};
             else
-                nlevels = 8;
+                pyradmids = 8;
             end
             
-            xpy = cell(nlevels,1);
-            ypy = cell(nlevels,1);
+            xpy = cell(pyradmids,1);
+            ypy = cell(pyradmids,1);
     
             ind = round(-3*sigma:1:3*sigma);
             % kernel-1d
