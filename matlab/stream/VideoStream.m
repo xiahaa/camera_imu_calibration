@@ -1,4 +1,4 @@
-classdef VideoStream<handle
+classdef VideoStream < handle
     properties
         flow;
         flow_mode;
@@ -38,6 +38,10 @@ classdef VideoStream<handle
             %                 The world points projected to the image plane of the camera used by the stream
             %             """
         	imgpoints = obj.camera_model.project(points);
+        end
+        
+        function num = get_frame_count(obj)
+            num = obj.cap.get('FrameCount');
         end
         
         function points=unproject(obj, image_points)
@@ -140,7 +144,7 @@ classdef VideoStream<handle
                 if strcmp(obj.flow_mode,'rotation')
                     obj.generate_frame_to_frame_rotation(do_plot);
                 elseif strcmp(obj.flow_mode,'optical')
-                    obj.flow = obj.generate_frame_to_frame_flow_magnitude(do_plot);
+                    obj.flow = tracking.video_track(obj);
                 else % todo, use essential
                     error('Not yet implemented!');
                 end

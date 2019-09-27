@@ -66,11 +66,11 @@ function time_offset = sync_camera_gyro(flow, flow_timestamps, gyro_data, ...
 
     if freq_gyro > freq_image
         rel_rate = freq_gyro / freq_image;
-        flow_mag = znccpyr.upsample(flow, rel_rate);% could also use matlab resample
+        flow_mag = zncc.upsample(flow, rel_rate);% could also use matlab resample
     else
         flow_mag = flow;
         rel_rate = freq_image / freq_gyro;
-        gyro_mag = znccpyr.upsample(gyro_mag, rel_rate);
+        gyro_mag = zncc.upsample(gyro_mag, rel_rate);
     end
     
     if ~isempty(save_path)
@@ -90,7 +90,7 @@ function time_offset = sync_camera_gyro(flow, flow_timestamps, gyro_data, ...
         gyro_mag_s = gyro_normalized;
     end
 
-    ishift = znccpyr.coarse_to_fine_corr(flow_mag_s,gyro_mag_s, 12, levels);
+    ishift = zncc.coarse_to_fine_corr(flow_mag_s,gyro_mag_s, 12, levels);
     % ishift = znccpyr.find_shift_pyr(flow_mag, gyro_mag, levels);
     % ishift = ishift2
 
@@ -115,10 +115,11 @@ function time_offset = sync_camera_gyro(flow, flow_timestamps, gyro_data, ...
         plot(flow_timestamps, flow/max(flow), 'r-','LineWidth',2);hold on;
         plot(gyro_timestamps, gyro_mag/max(gyro_mag), 'b-','LineWidth',2);grid on;
         legend({'flow','gyro'});
-        
+        title('Before Alignment');
         subplot(2,1,2);
         plot(flow_timestamps+time_offset, flow/max(flow), 'r-','LineWidth',2);hold on;
         plot(gyro_timestamps, gyro_mag/max(gyro_mag), 'b-','LineWidth',2);grid on;
         legend({'flow','gyro'});
+        title('After Alignment');
     end
 end

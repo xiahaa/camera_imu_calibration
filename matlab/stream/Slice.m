@@ -33,23 +33,27 @@ classdef Slice < handle
             % Distance threshold (in pixels) for a reprojected point to count as an inlier
             % """
             if nargin == 3
-                threshold = varargin{1};
+                ransac_threshold = varargin{1};
             else
-                thereshold = 7;
+                ransac_threshold = 7;
             end
             
             if isempty(obj.axis)
-                x = obj.points{1}{:};
-                y = obj.points{end}{:};
+                x = reshape(cell2mat(obj.points{1}),2,[]);
+                y = reshape(cell2mat(obj.points{end}),2,[]);
                 inlier_ratio = 0.5;
-                [R, t, dist, idx] = estimate_rotation_procrustes_ransac(x, y, ...
-                    camera, ransac_threshold, inlier_ratio, false);
+                try
+                    [R, t, dist, idx] = estimate_rotation_procrustes_ransac(x, y, ...
+                        camera, ransac_threshold, inlier_ratio, false);
+                catch
+                    R = [];
+                end
                 if ~isempty(R)
                     [obj.axis, obj.angle] = rotation_matrix_to_axis_angle(R);
                     if obj.angle < 0 % Constrain to positive angles
-                        obj.angle = -obj.angle
-                        obj.axis = -obj.axis
-                    obj.inliers = idx
+                        obj.angle = -obj.angle;
+                        obj.axis = -obj.axis;
+                    obj.inliers = idx;
                     end
                 end
             end
@@ -109,18 +113,18 @@ classdef Slice < handle
             while 1
                 im = video_stream.read();
                 if isempty(im), break; end
-                im = cv2.cvtColor(im, 'RGB2GRAY');
-                if next_seq_start <= i < next_seq_start + next_seq_length
+                im = cv.cvtColor(im, 'RGB2GRAY');
+                if next_seq_start <= i && i < next_seq_start + next_seq_length
                     seq_frames{end+1} = im;
                     if length(seq_frames) == next_seq_length
                         % detect features in the first frame
                         seq_start_points=feature_detection(seq_frames{1},gftt_params);
-                        points, status = tracking.track_retrack(seq_frames,seq_start_points,0.8,false,true);
+                        [points, status] = tracking.track_retrack(seq_frames,seq_start_points,0.5,false,true);
                         if length(status) >= min_slice_points
                             % consider this slice is good
                             s = Slice(next_seq_start,i,points);
                             slices{end+1}=s;
-                            debuginfo = sprintf('%4d %3d %5d {%9d-%9d}', length(slices)-1, length(status), next_seq_start, i);
+                            debuginfo = sprintf('%d %d {%d-%d}', length(slices)-1, length(status), next_seq_start, i);
                             disp(debuginfo);
                         end
                         seq_frames=[];% clear for next slice
