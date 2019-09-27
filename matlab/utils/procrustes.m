@@ -2,8 +2,8 @@ function varargout = procrustes(X,Y,remove_mean)
     if size(X,2) == 2
         X3 = cross(X(:,1),X(:,2));
         Y3 = cross(Y(:,1),Y(:,2));
-        X = [X;X3./norm(X3)];
-        Y = [Y;Y3./norm(X3)];
+        X = [X X3./norm(X3)];
+        Y = [Y Y3./norm(Y3)];
     end
     D = size(X,1);
     N = size(X,2);
@@ -14,8 +14,9 @@ function varargout = procrustes(X,Y,remove_mean)
         Xhat = X;
         Yhat = Y;
     end
-    [U,~,V]=svd(Xhat*Yhat');
-    R = U*diag([1,1,det(U*V)])*V;
+%     [U,~,V]=svd(Xhat*Yhat');
+    [U,~,V]=svd(Yhat*Xhat');
+    R = V*diag([1,1,det(V*U')])*U';
     varargout{1}=R;
     if remove_mean
         t = mean(X,2) - R*mean(Y,2);
