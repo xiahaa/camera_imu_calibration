@@ -1,4 +1,4 @@
-function [R, t, dist, ransac_consensus_idx] = estimate_rotation_procrustes_ransac(x, y, camera, threshold, inlier_ratio)
+function [R, t, dist, ransac_consensus_idx] = estimate_rotation_procrustes_ransac(x, y, camera, threshold, inlier_ratio, refine)
 % Calculate rotation between two sets of image coordinates using ransac.
 % Inlier criteria is the reprojection error of y into image 1.
 % Parameters
@@ -23,14 +23,30 @@ function [R, t, dist, ransac_consensus_idx] = estimate_rotation_procrustes_ransa
         inlier_ratio = 0.5;
     end
     
+    function err = eval(model, data)
+        Y1 = data(4:6,:);
+        x1 = data(7:8,:);
+        R1 = model{1};
+        if length(model) == 2
+            t1 = model{2};
+        else
+            t1 = zeros(3,1);
+        end
+
+        Xhat = R1*Y1 + t1 * ones(1,size(data,2));
+        xhat = camera.project(Xhat);
+        err = sqrt(sum((x1-xhat).^2,1));
+    end
+    
     data = [X; Y; x];
     model_func = @fun;
     eval_func = @eval;
     
     inlier_selection_prob = 0.99999;
     model_points = 2;
-    ransac_iterations = int(log(1 - inlier_selection_prob) / log(1-inlier_ratio^model_points));
-    [model_est, ransac_consensus_idx] = RANSAC(model_func, eval_func, data, model_points, ransac_iterations, threshold, true);
+    ransac_iterations = int32(log(1 - inlier_selection_prob) / log(1-inlier_ratio^model_points));
+    
+    [model_est, ransac_consensus_idx] = RANSAC(model_func, eval_func, data, model_points, ransac_iterations, threshold, refine);
     
     if ~isempty(model_est)
         R=model_est{1};
@@ -56,21 +72,6 @@ function model = fun(data)
         model{1}=R;
         model{2}=t;
     end
-end
-
-function err = eval(model, data)
-    Y = data(4:6,:);
-    x = data(7:8,:);
-    R = model{1};
-    if length(model) == 2
-        t = model{2};
-    else
-        t = zeros(3,1);
-    end
-
-    Xhat = R*Y + t * ones(1,size(data,2));
-    xhat = camera.project(Xhat);
-    err = sqrt(sum((x-xhat).^2,1));
 end
 
 
