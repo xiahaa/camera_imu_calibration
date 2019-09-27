@@ -1,5 +1,12 @@
 function data_filtered = post_process_L3G4200D_data(data, varargin)
-    [b,a] = iirnotch(0.8, 0.03);
+    if nargin == 3
+        wn = varargin{1};
+        bandwidth = varargin{2};
+    else
+        wn = 0.8;
+        bandwidth = 0.03;
+    end
+    [b,a] = iirnotch(wn, bandwidth);
     
     data_filtered = data;
     
