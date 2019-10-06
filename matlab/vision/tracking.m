@@ -9,7 +9,7 @@ classdef tracking
             if nargin >= 3 && isempty(varargin{2})
                 gftt_options = varargin{2};
             else
-                gftt_options=struct();
+                gftt_options=[];
             end
             if nargin >= 4 && isempty(varargin{3})
                 do_plot = varargin{3};
@@ -19,7 +19,7 @@ classdef tracking
             if nargin >= 5 && isempty(varargin{4})
                 use_mask = varargin{4};
             else
-                use_mask = false;
+                use_mask = true;
             end
             
             len = videohandle.get_frame_count();
