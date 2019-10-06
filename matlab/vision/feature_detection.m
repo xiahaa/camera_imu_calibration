@@ -1,5 +1,5 @@
 function features = feature_detection(img, varargin)
-    GFTT_PARAMS.max_corners = 100;
+    GFTT_PARAMS.max_corners = 400;
     GFTT_PARAMS.quality_level = 0.07;
     GFTT_PARAMS.min_distance = 10;
     if nargin >= 2
@@ -14,12 +14,13 @@ function features = feature_detection(img, varargin)
         use_mask = false;
     end
     
+    mask = uint8(ones(size(img)));
     if use_mask
-        mask = ones(size(img));
         mask(end-200:end,:) = 0;
     end
     
-    features = cv.goodFeaturesToTrack(img, 'MaxCorners',GFTT_PARAMS.max_corners, 'QualityLevel',GFTT_PARAMS.quality_level, 'MinDistance',GFTT_PARAMS.min_distance);
+    features = cv.goodFeaturesToTrack(img, 'MaxCorners',GFTT_PARAMS.max_corners, 'QualityLevel',GFTT_PARAMS.quality_level, ...
+        'MinDistance',GFTT_PARAMS.min_distance,'Mask',mask);
     if isempty(features)
         features = [];
         return;
