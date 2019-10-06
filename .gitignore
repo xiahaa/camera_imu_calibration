@@ -26,3 +26,5 @@ examples/test_on_np.py
 *.npy
 
 3rdparty/liegroups/
+
+matlab/test/*.m

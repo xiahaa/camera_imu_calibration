@@ -53,8 +53,8 @@ classdef Slice < handle
                     if obj.angle < 0 % Constrain to positive angles
                         obj.angle = -obj.angle;
                         obj.axis = -obj.axis;
-                    obj.inliers = idx;
                     end
+                    obj.inliers = idx;
                 end
             end
             axis = obj.axis;
@@ -155,23 +155,23 @@ classdef Slice < handle
             N_max = sum(A);
             assert(N<=N_max);%the sample N could be over the maximum inlier number
             
-            samples_from = zeros(length(A),1);%Number of samples to draw from each group
+            samples_from = zeros(1,length(A));%Number of samples to draw from each group
             remaining = N;
             
             while remaining > 0
                 remaining_groups = find(samples_from-A);
                 if remaining < length(remaining_groups)
                     remaining_groups = remaining_groups(randperm(length(remaining_groups)));
-                    samples_from(remaining_groups(1:remaining_groups)) = samples_from(remaining_groups(1:remaining_groups)) + 1;
+                    samples_from(remaining_groups(1:remaining)) = samples_from(remaining_groups(1:remaining)) + 1;
                 else
                     % Give each group the allowed number of samples. Constrain to their max size.
-                    to_each = max(1, int(remaining / length(remaining_groups)));
+                    to_each = max(1, floor(remaining / length(remaining_groups)));
                     samples_from = samples_from + to_each;
                     id = samples_from>A;
                     samples_from(id) = A(id);
                 end
                 % Update remaining count
-                remaining = int(N - sum(samples_from));
+                remaining = (N - sum(samples_from));
             end
             if remaining ~= 0
                 error("Still {:d} samples left! This is an error in the selection.");
@@ -185,7 +185,7 @@ classdef Slice < handle
                     samples{i} = [];
                 else
                     id = randperm(A(i));
-                    samples{i} = slice_list{i}.inliers(id(1:n));
+                    samples{i} = slice_list{i}.inliers(id(1:samples_from(i)));
                 end
             end
         end
