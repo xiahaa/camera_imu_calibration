@@ -58,7 +58,7 @@ function time_offset = sync_camera_gyro(flow, flow_timestamps, gyro_data, ...
     end
     
     % Gyro from gyro data
-    gyro_mag = vecnorm(gyro_data);
+    gyro_org = vecnorm(gyro_data);
     % Resample to match highest
     rate = @(ts) (1/mean(diff(ts)));
     freq_gyro = rate(gyro_timestamps);
@@ -70,7 +70,7 @@ function time_offset = sync_camera_gyro(flow, flow_timestamps, gyro_data, ...
     else
         flow_mag = flow;
         rel_rate = freq_image / freq_gyro;
-        gyro_mag = zncc.upsample(gyro_mag, rel_rate);
+        gyro_mag = zncc.upsample(gyro_org, rel_rate);
     end
     
     if ~isempty(save_path)
@@ -113,12 +113,12 @@ function time_offset = sync_camera_gyro(flow, flow_timestamps, gyro_data, ...
         subplot(h.ax);
         subplot(2,1,1);
         plot(flow_timestamps, flow/max(flow), 'r-','LineWidth',2);hold on;
-        plot(gyro_timestamps, gyro_mag/max(gyro_mag), 'b-','LineWidth',2);grid on;
+        plot(gyro_timestamps, gyro_org/max(gyro_org), 'b-','LineWidth',2);grid on;
         legend({'flow','gyro'});
         title('Before Alignment');
         subplot(2,1,2);
         plot(flow_timestamps+time_offset, flow/max(flow), 'r-','LineWidth',2);hold on;
-        plot(gyro_timestamps, gyro_mag/max(gyro_mag), 'b-','LineWidth',2);grid on;
+        plot(gyro_timestamps, gyro_org/max(gyro_org), 'b-','LineWidth',2);grid on;
         legend({'flow','gyro'});
         title('After Alignment');
     end
