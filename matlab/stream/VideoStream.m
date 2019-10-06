@@ -9,6 +9,11 @@ classdef VideoStream < handle
         duration;
         failcnt;
         frame_rotation;
+        frame_ts;
+        %% special data if you can parse gopro data
+        gopro_gps;
+        gopro_gyro;
+        gopro_acc;
     end
     methods
         function obj = VideoStream(camera_model, flow_mode)
@@ -20,6 +25,11 @@ classdef VideoStream < handle
             obj.start_time=[];
             obj.duration=[];
             obj.frame_rotation=[];
+            obj.frame_ts = [];
+            %
+            obj.gopro_gps = [];
+            obj.gopro_gyro = [];
+            obj.gopro_acc = [];
         end
         
         function imgpoints = project(obj, points)
@@ -84,9 +94,39 @@ classdef VideoStream < handle
             obj.cap.read();
             obj.cap.set('PosMsec', t);
             obj.failcnt = 0;
+            
+            % get frame timestamps
+            [~, t] = obj.read();
+            obj.frame_ts = t/1e3;% local clocker mesc to s, this will be the start time of the flow 
+%             while true
+%                 [~,t] = obj.read();
+%                 if isempty(t)
+%                     break;
+%                 end
+%                 obj.frame_ts = [obj.frame_ts t];
+%             end
+
+            %% special part if you can parse gopro data
+            if nargin >= 5
+                imu=load(varargin{3});
+                obj.gopro_gyro = imu.gopro_imu(:,5:8)';
+                obj.gopro_gyro(1,:)=obj.gopro_gyro(1,:)*1e-3;%mesc to s
+                obj.gopro_acc = imu.gopro_imu(:,1:4)';
+                obj.gopro_acc(1,:)=obj.gopro_acc(1,:)*1e-3;%mesc to s
+                id = obj.gopro_gyro(1,:) > obj.start_time;
+                obj.gopro_gyro = obj.gopro_gyro(:,id);
+                obj.gopro_acc = obj.gopro_acc(:,id);
+            end
+            if nargin >= 6
+                gps=load(varargin{4});
+                obj.gopro_gps = gps.gopro_gps';
+                obj.gopro_gps(1,:)=obj.gopro_gps(1,:)*1e-3;
+                id = obj.gopro_gps(1,:) > obj.start_time;
+                obj.gopro_gps = obj.gopro_gps(:,id);
+            end
         end
         
-        function frame = read(obj)
+        function varargout = read(obj)
             t2 = obj.start_time * 1000 + obj.duration*1000.0; %if self.duration is not None else None
             t = obj.cap.get('PosMsec');
             frame=[];
@@ -101,6 +141,11 @@ classdef VideoStream < handle
                     end
                 end
             end
+            varargout{1} = frame;
+            if isempty(frame)
+                t = [];
+            end
+            varargout{2} = t;
         end
                     
         function play(obj)
