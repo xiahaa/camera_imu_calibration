@@ -20,7 +20,7 @@ function q = slerp(q1, q2, u)
     if abs(u-0)<1e-6
         q = q1;
     elseif abs(u-1.)<1e-6
-        q = q2
+        q = q2;
     elseif u > 1 || u < 0
         error("u must be in range [0, 1]");
     else

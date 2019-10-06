@@ -11,6 +11,8 @@ classdef Camera < handle
             obj.image_size = imagesize;
             obj.frame_rate = framerate;
             obj.readout = readout;
+            obj.rows = imagesize(2);
+            obj.cols = imagesize(1);
         end
         
         function imgpts = project(obj,objpts)

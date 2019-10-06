@@ -3,7 +3,7 @@ function features = feature_detection(img, varargin)
     GFTT_PARAMS.quality_level = 0.07;
     GFTT_PARAMS.min_distance = 10;
     if nargin >= 2
-        if isempty(varargin{1})
+        if ~isempty(varargin{1})
             GFTT_PARAMS = varargin{1};
         end
     end

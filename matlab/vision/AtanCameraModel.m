@@ -34,14 +34,17 @@ classdef AtanCameraModel < Camera
             rn = sqrt((undisotpoints(1,:) - wx).^2+(undisotpoints(2,:) - wy).^2);
             phi = atan2(undisotpoints(2,:) - wy,undisotpoints(1,:) - wx);
             r = atan(rn * obj.lgamma) / obj.lgamma;
-            distortpoints = [wx+r.*cos(phi);wy+r.*sin(phi)];
+            distortpoints = undisotpoints;
+            distortpoints(1,:) = wx+r.*cos(phi);
+            distortpoints(2,:) = wy+r.*sin(phi);
         end
         
         function imgpoints = project(obj,objpoints)
+            objpoints = objpoints./objpoints(3,:);
             X = obj.apply(objpoints);
-            if size(X,1) == 2
-                X = [X;ones(1,size(X,2))];
-            end
+%             if size(X,1) == 2
+%                 X = [X;ones(1,size(X,2))];
+%             end
             x2d = obj.camera_matrix * X;
             imgpoints = x2d(1:2,:) ./ x2d(3,:);
         end
