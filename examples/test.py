@@ -40,7 +40,7 @@ GYRO_RATE_GUESS = 853.86
 #%%
 parser = argparse.ArgumentParser()
 parser.add_argument('video')
-args = parser.parse_args(['./data/gopro-gyro-dataset/walk.MP4'])
+args = parser.parse_args(['./data/gopro-gyro-dataset/rccar.MP4'])
 print(args.video)
 gyro_file = os.path.splitext(args.video)[0] + '_gyro.csv'
 reference_file = os.path.splitext(args.video)[0] + '_reference.csv'

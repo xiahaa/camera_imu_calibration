@@ -37,6 +37,11 @@ class Slice(object):
             Distance threshold (in pixels) for a reprojected point to count as an inlier
         """
         if self.axis is None:
+            ## debug only
+            # import scipy.io as sio
+            # sio.savemat('./one_slice_point.mat',{'points':self.points})
+            # self.points=sio.loadmat('./one_slice_point.mat')
+
             x = self.points[:, 0, :].T
             y = self.points[:, -1, :].T
             inlier_ratio = 0.5

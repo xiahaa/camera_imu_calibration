@@ -153,6 +153,16 @@ class calibrator(object):
         dt = float(1.0/self.parameter['gyro_rate'])
         # integration to get the imu rotation
         q = self.gyro.integrate(dt)
+
+        plt.clf()
+        plt.plot(q[:,0])
+        plt.plot(q[:,1])
+        plt.plot(q[:,2])
+        plt.plot(q[:,3])
+        plt.draw()
+        plt.waitforbuttonpress(timeout=1000.0)
+        plt.close()
+
         #
         video_axes = []
         gyro_axes = []
@@ -212,6 +222,9 @@ class calibrator(object):
         threshold = np.deg2rad(8.0)# tunable
         data = np.vstack((np.array(video_axes).T, np.array(gyro_axes).T))
         
+        import scipy.io as sio 
+        sio.savemat('./rot.mat',{'video_axes':video_axes,'gyro_axes':gyro_axes})
+
         R, _ = ransac.adaRANSAC(model_func,\
             eval_func,data,model_points,threshold,recalculate=True)
         
@@ -293,6 +306,15 @@ def optimization_func(x, slices, slice_sample_idxs, camera, gyro, norm_c):
         # now we have each slice and the inliers index we need to sample for this slice
         if len(sample_idxs) < 1:
             continue
+
+        ## only for debug
+        # import scipy.io as sio
+        # sio.savemat('./optimization.mat',{\
+        #     'x':x, 'gyro': gyro.data,'norm_c':norm_c,\
+        #     'points':_slice.points,\
+        #     't_s':_slice.start, 't_e': _slice.end, \
+        #     'sample_idxs':sample_idxs,'R_g2c':R_g2c,\
+        #         'integration_margin':integration_margin})
         
         # synchronized time for the first frame in the slice
         t_start = _slice.start / camera.frame_rate + offset
@@ -320,7 +342,7 @@ def optimization_func(x, slices, slice_sample_idxs, camera, gyro, norm_c):
         gyro_part_unbiased = gyro_part + gyro_bias
         # use updated integration time
         q = imu_new.integrate_gyro_quaternion_uniform(gyro_part_unbiased,Tg)
-        
+
         for track in _slice.points[sample_idxs]:
             x = track[0]
             y = track[-1]
