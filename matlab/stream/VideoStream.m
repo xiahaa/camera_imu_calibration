@@ -159,11 +159,18 @@ classdef VideoStream < handle
             end
             h.ax = axes('Parent',h.fig, 'Units','normalized', 'Position',[0 0 1 1]);
             
+            %% temporary code
+            fid = fopen('framestamps.txt','w');
+            t = 0;
+            
             frame = obj.read();
             img = cv.resize(frame,[320,240]);
             h.img = imshow(img, 'Parent',h.ax);
             
             while true
+                fprintf(fid,'%6.6f\n',t);
+                t = t + 1/30.0;
+                
                 frame = obj.read();
                 if isempty(frame)
                     break;
@@ -172,6 +179,7 @@ classdef VideoStream < handle
                 set(h.img, 'CData',img)
                 drawnow
             end
+            fclose(fid);
             
             close(h.fig);
             
