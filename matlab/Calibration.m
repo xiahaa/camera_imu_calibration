@@ -258,6 +258,27 @@ classdef Calibration < handle
                 if obj.dbg_level > 0
                     if exist(filename,'file')
                         load(filename,'time_offset');
+                            
+                        h = struct();
+                        h.fig = figure('Name','Time Alignment', 'NumberTitle','off', 'Menubar','none', ...
+                            'Pointer','cross', 'Resize','off', 'Position',[200 200 400 400]);
+                        if ~mexopencv.isOctave()
+                            %HACK: not implemented in Octave
+                            movegui(h.fig, 'west');
+                        end
+                        gyro_org = vecnorm(obj.gyro.data);
+                        h.ax = axes('Parent',h.fig, 'Units','normalized', 'Position',[0 0 1 1]);
+                        subplot(h.ax);
+                        subplot(2,1,1);
+                        plot(flow_times, flow/max(flow), 'r-','LineWidth',2);hold on;
+                        plot(gyro_times, gyro_org/max(gyro_org), 'b-','LineWidth',2);grid on;
+                        legend({'flow','gyro'});
+                        title('Before Alignment');
+                        subplot(2,1,2);
+                        plot(flow_times+time_offset, flow/max(flow), 'r-','LineWidth',2);hold on;
+                        plot(gyro_times, gyro_org/max(gyro_org), 'b-','LineWidth',2);grid on;
+                        legend({'flow','gyro'});
+                        title('After Alignment');
                     else
                         time_offset = sync_camera_gyro(flow, flow_times, obj.gyro.data, ...
                                             gyro_times, true, nlevels, obj.save_path);

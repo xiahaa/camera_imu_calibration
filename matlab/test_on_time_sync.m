@@ -15,8 +15,12 @@ CAMERA_FRAME_RATE = 30.0;
 CAMERA_IMAGE_SIZE = [2704, 1520];
 CAMERA_READOUT = 0.03;
 %% 
-base = 'D:/dtu/data/hand_eye/1015/1';
-videofile = fullfile(base,'GH014301.MP4');
+if ismac
+    base = '/Volumes/document/camera_imu_calibration/data/calibration/1015/3';
+else
+    base = 'D:/dtu/data/hand_eye/1015/1';
+end
+videofile = fullfile(base,'GH014303.MP4');
 imufile = fullfile(base,'imugps.mat');
 califile = fullfile(base,'cali_param_1_9_16_53.yml');
 fprintf('opening: \n\t %s \n\t %s \n\t %s',videofile, imufile, califile);
@@ -24,7 +28,7 @@ fprintf('opening: \n\t %s \n\t %s \n\t %s',videofile, imufile, califile);
 
 %% load imu gps data
 imugps = GPS_IMU_Stream();
-imugps.from_mat(imufile, 100);
+imugps.from_mat(imufile, 72);
 
 %% load camera calibration file
 fs=cv.FileStorage(califile);
@@ -40,9 +44,9 @@ fprintf('Creating video stream from %s',videofile);
 video=VideoStream(camera, 'optical');
 try
     gen_gopro_mat(videofile);
-    video.from_file(videofile,0,inf,fullfile(filepath,'gopro_imu'),fullfile(filepath,'gopro_gps'));
+    video.from_file(videofile,5,inf,fullfile(filepath,'gopro_imu'),fullfile(filepath,'gopro_gps'));
 catch
-    video.from_file(videofile,0,inf);
+    video.from_file(videofile,5,inf);
 end
 % video.play();
 

@@ -163,17 +163,16 @@ classdef VideoStream < handle
             fid = fopen('framestamps.txt','w');
             t = 0;
             
-            frame = obj.read();
+            [frame,t] = obj.read();
             img = cv.resize(frame,[320,240]);
             h.img = imshow(img, 'Parent',h.ax);
-            
+
             while true
-                fprintf(fid,'%6.6f\n',t);
-                t = t + 1/30.0;
-                
-                frame = obj.read();
+%                 t = t + 1/30.0;
+                fprintf(fid,'%6.6f\n',t/1e3);
+                [frame,t] = obj.read();
                 if isempty(frame)
-                    break;
+                    break;                    
                 end
                 img = cv.resize(frame,[320,240]);
                 set(h.img, 'CData',img)

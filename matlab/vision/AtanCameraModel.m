@@ -39,9 +39,13 @@ classdef AtanCameraModel < Camera
             distortpoints(2,:) = wy+r.*sin(phi);
         end
         
-        function imgpoints = project(obj,objpoints)
+        function imgpoints = project(obj,objpoints,varargin)
             objpoints = objpoints./objpoints(3,:);
-            X = obj.apply(objpoints);
+            if nargin == 2
+                X = obj.apply(objpoints);
+            else
+                X = objpoints;
+            end
 %             if size(X,1) == 2
 %                 X = [X;ones(1,size(X,2))];
 %             end
@@ -50,7 +54,9 @@ classdef AtanCameraModel < Camera
         end
 
         function objpoints = unproject(obj,imgpoints)
-            imgpoints = [imgpoints;ones(1,size(imgpoints,2))];
+            if size(imgpoints,1) == 2
+                imgpoints = [imgpoints;ones(1,size(imgpoints,2))];
+            end
             objpoints = obj.inv_camera_matrix * imgpoints;
             objpoints = objpoints ./ objpoints(3,:);
             objpoints = obj.undistort(objpoints);
