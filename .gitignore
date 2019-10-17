@@ -32,3 +32,4 @@ matlab/test/*.m
 matlab/gyro.txt
 
 matlab/framestamps.txt
+*.asv

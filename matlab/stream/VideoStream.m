@@ -14,6 +14,7 @@ classdef VideoStream < handle
         gopro_gps;
         gopro_gyro;
         gopro_acc;
+        num;
     end
     methods
         function obj = VideoStream(camera_model, flow_mode)
@@ -51,7 +52,11 @@ classdef VideoStream < handle
         end
         
         function num = get_frame_count(obj)
-            num = obj.cap.get('FrameCount');
+            try
+                num = obj.cap.get('FrameCount');
+            catch
+                num = obj.num;
+            end
         end
         
         function points=unproject(obj, image_points)
@@ -85,19 +90,26 @@ classdef VideoStream < handle
                 obj.duration = inf;
             end
             obj.filename = filename;
-            obj.cap = cv.VideoCapture(obj.filename);
-            assert(obj.cap.isOpened());
-            
-            % OpenCV does something really stupid: to set the frame we need to set it twice and query in between
-            t = obj.start_time * 1000; % turn to milliseconds
-            obj.cap.set('PosMsec', t);% equivalent to use CV_CAP_PROP_POS_MSEC
-            obj.cap.read();
-            obj.cap.set('PosMsec', t);
-            obj.failcnt = 0;
-            
-            % get frame timestamps
-            [~, t] = obj.read();
-            obj.frame_ts = t/1e3;% local clocker mesc to s, this will be the start time of the flow 
+            try
+                obj.cap = cv.VideoCapture(obj.filename);
+                assert(obj.cap.isOpened())
+                % OpenCV does something really stupid: to set the frame we need to set it twice and query in between
+                t = obj.start_time * 1000; % turn to milliseconds
+                obj.cap.set('PosMsec', t);% equivalent to use CV_CAP_PROP_POS_MSEC
+                obj.cap.read();
+                obj.cap.set('PosMsec', t);
+                obj.failcnt = 0;
+                % get frame timestamps
+                [~, t] = obj.read();
+                obj.frame_ts = t/1e3;% local clocker mesc to s, this will be the start time of the flow
+            catch
+                obj.cap = VideoReader(obj.filename);
+                obj.failcnt = 0;
+                obj.num = obj.cap.NumberofFrames;
+                obj.cap = VideoReader(obj.filename,'CurrentTime',obj.start_time);
+                [~, t] = obj.read();
+                obj.frame_ts = t;% local clocker mesc to s, this will be the start time of the flow
+            end
 %             while true
 %                 [~,t] = obj.read();
 %                 if isempty(t)
@@ -127,18 +139,30 @@ classdef VideoStream < handle
         end
         
         function varargout = read(obj)
-            t2 = obj.start_time * 1000 + obj.duration*1000.0; %if self.duration is not None else None
-            t = obj.cap.get('PosMsec');
-            frame=[];
-            if t < t2
-                try
-                    frame = obj.cap.read();
-                catch
-                    warning('Failed to read frame');
-                    obj.failcnt = obj.failcnt + 1;
-                    if obj.failcnt > 20
-                        error('Failed to read frame up to 20 times~~~');
+            if ismac
+                t2 = obj.start_time * 1000 + obj.duration*1000.0; %if self.duration is not None else None
+                t = obj.cap.get('PosMsec');
+                frame=[];
+                if t < t2
+                    try
+                        frame = obj.cap.read();
+                    catch
+                        warning('Failed to read frame');
+                        obj.failcnt = obj.failcnt + 1;
+                        if obj.failcnt > 20
+                            error('Failed to read frame up to 20 times~~~');
+                        end
                     end
+                end
+            else
+                t2 = obj.start_time + obj.duration; %if self.duration is not None else None
+                t = obj.cap.CurrentTime;
+                if hasFrame(obj.cap) && t < t2
+                    frame = obj.cap.readFrame();
+                    t = obj.cap.CurrentTime;
+                else
+                    frame = [];
+                    t = [];
                 end
             end
             varargout{1} = frame;
@@ -183,11 +207,16 @@ classdef VideoStream < handle
             close(h.fig);
             
             % reset 
-            t = obj.start_time * 1000; % turn to milliseconds
-            obj.cap.set('PosMsec', t);% equivalent to use CV_CAP_PROP_POS_MSEC
-            obj.cap.read();
-            obj.cap.set('PosMsec', t);
-            obj.failcnt = 0;
+            if ismac
+                t = obj.start_time * 1000; % turn to milliseconds
+                obj.cap.set('PosMsec', t);% equivalent to use CV_CAP_PROP_POS_MSEC
+                obj.cap.read();
+                obj.cap.set('PosMsec', t);
+                obj.failcnt = 0;
+            else
+                obj.cap = VideoReader(obj.filename,'CurrentTime',obj.start_time);
+                obj.failcnt = 0;
+            end
         end
         
         function flow = estimate_flow(obj, do_plot)

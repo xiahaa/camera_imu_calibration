@@ -14,9 +14,11 @@ classdef GPS_IMU_Stream < handle
         vg;
         ag;
         time;
+        start_time;
+        rate;
     end
     methods
-        function obj=GPS_IMU_Stream()
+        function obj=GPS_IMU_Stream(rate)
             obj.GPSTime = [];     
             obj.p = []; 
             obj.vb = [];     
@@ -32,19 +34,30 @@ classdef GPS_IMU_Stream < handle
             obj.vg = []; 
             obj.ag = []; 
             obj.time = [];
+            obj.start_time = [];
+            obj.rate = rate;
         end
         
         function from_mat(obj,filename,varargin)
             imudata = load(filename);
             imudata = imudata.imugps;
+            % 100hz timestamp to 200hz
+            for i = 1:2:length(imudata)
+                t1 = imudata(i,1);
+                t2 = imudata(i+1,1);
+                if t1 == t2
+                    imudata(i+1,1) = t1 + 1 / obj.rate;
+                end
+            end
+            
             % convert to local time
             localtime = imudata(:,1) - imudata(1,1);
             if nargin >= 3
-                start_time = varargin{1};
+                obj.start_time = varargin{1};
             else
-                start_time = 0;
+                obj.start_time = 0;
             end        
-            valids = localtime >= start_time;
+            valids = localtime >= obj.start_time;
             obj.time = localtime(valids)';
             obj.GPSTime = imudata(valids,1)';
             obj.p = imudata(valids,2:4)';
@@ -82,11 +95,11 @@ classdef GPS_IMU_Stream < handle
             % convert to local time
             localtime = imudata(:,1) - imudata(1,1);
             if nargin >= 3
-                start_time = varargin{1};
+                obj.start_time = varargin{1};
             else
-                start_time = 0;
+                obj.start_time = 0;
             end        
-            valids = localtime >= start_time;
+            valids = localtime >= obj.start_time;
             obj.time = localtime(valids)';
             obj.GPSTime = imudata(valids,1)';
             obj.p = imudata(valids,2:4)';
@@ -123,11 +136,15 @@ classdef GPS_IMU_Stream < handle
         function get_vg_ag(obj)
             obj.vg = obj.vb;
             obj.ag = obj.ab;
-            for i = 1:size(obj.time,2)
-                R = rpytoR([obj.yaw(i),obj.pitch(i),obj.roll(i)]);
-                obj.vg(:,i) = R*obj.vb(:,i);
-                obj.ag(:,i) = R*obj.ab(:,i);
-            end
+            
+            R = angle2dcm(obj.yaw,obj.pitch,obj.roll);
+            obj.vg = squeeze(sum(bsxfun(@times, R, reshape(obj.vb,[1,3,length(obj.vb)])), 2));
+            obj.ag = squeeze(sum(bsxfun(@times, R, reshape(obj.ab,[1,3,length(obj.ab)])), 2));
+%             for i = 1:size(obj.time,2)
+%                 R = rpytoR([obj.yaw(i),obj.pitch(i),obj.roll(i)]);
+%                 obj.vg(:,i) = R*obj.vb(:,i);
+%                 obj.ag(:,i) = R*obj.ab(:,i);
+%             end
         end
     end
     methods(Static)

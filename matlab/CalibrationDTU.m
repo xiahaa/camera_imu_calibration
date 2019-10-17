@@ -280,20 +280,36 @@ classdef CalibrationDTU < handle
                     error('time alignment failure');
                 end
             else
-                %% if gopro data can be parsed, then use gopro integrated gyro to sync with external imu gps
                 gyro_rate = obj.params.users.gyro_rate;
-                gyro_times_gopro = obj.video.gopro_gyro(1,:) - obj.video.gopro_gyro(1,1);
-                gyro_times = ((1:obj.imugps.num_samples)-1)./gyro_rate;
-                
                 gyro_mag_gopro = sqrt(obj.video.gopro_gyro(2,:).^2+obj.video.gopro_gyro(3,:).^2+obj.video.gopro_gyro(4,:).^2);
-                time_offset = sync_camera_gyro(gyro_mag_gopro, gyro_times_gopro, obj.imugps.w, gyro_times, false, nlevels, obj.save_path);
+
+                filename = fullfile(obj.save_path,'time_offset.mat');
+                if obj.dbg_level > 0
+                    if exist(filename,'file')
+                        load(filename,'time_offset','time_offset_to_imu_local');
+                    else
+                        %% if gopro data can be parsed, then use gopro integrated gyro to sync with external imu gps
+                        gyro_times_gopro = obj.video.gopro_gyro(1,:) - obj.video.gopro_gyro(1,1);
+                        gyro_times = ((1:obj.imugps.num_samples)-1)./gyro_rate;
+
+                        time_offset = sync_camera_gyro(gyro_mag_gopro, gyro_times_gopro, obj.imugps.w, gyro_times, false, nlevels, obj.save_path);
+                        
+                        % correct to imugps local time
+                        time_offset_to_imu_local = obj.imugps.time(1) - obj.video.gopro_gyro(1,1) + time_offset;
+                        
+                        if ~exist(obj.save_path,'dir')
+                            mkdir(obj.save_path);
+                        end
+                        save(filename,'time_offset','time_offset_to_imu_local');
+                    end
+                end
                 
                 %% draw aligned 1-aligned gyro, 2-gyro and flow, 3-gps horizontal position.
                 if true
                     gyro_org = vecnorm(obj.imugps.w);
                     h = struct();
                     h.fig = figure('Name','Time Alignment', 'NumberTitle','off', 'Menubar','none', ...
-                        'Pointer','cross', 'Resize','off', 'Position',[200 200 400 400]);
+                        'Pointer','cross', 'Resize','on', 'Position',[200 200 400 400]);
                     if ~mexopencv.isOctave()
                         %HACK: not implemented in Octave
                         movegui(h.fig, 'east');
@@ -301,32 +317,32 @@ classdef CalibrationDTU < handle
                     h.ax = axes('Parent',h.fig, 'Units','normalized', 'Position',[0 0 1 1]);
                     subplot(h.ax);
                     subplot(4,1,1);
-                    plot(gyro_times_gopro, gyro_mag_gopro/max(gyro_mag_gopro), 'r-','LineWidth',2);hold on;
-                    plot(gyro_times, gyro_org/max(gyro_org), 'b-','LineWidth',2);grid on;
+                    plot(obj.video.gopro_gyro(1,:), gyro_mag_gopro/max(gyro_mag_gopro), 'r-','LineWidth',2);hold on;
+                    plot(obj.imugps.time, gyro_org/max(gyro_org), 'b-','LineWidth',2);grid on;
                     legend({'gopro gyro','gyro'});
                     title('Before Alignment');
                     subplot(4,1,2);
-                    plot(gyro_times_gopro+time_offset, gyro_mag_gopro/max(gyro_mag_gopro), 'r-','LineWidth',2);hold on;
-                    plot(gyro_times, gyro_org/max(gyro_org), 'b-','LineWidth',2);grid on;
+                    plot(obj.video.gopro_gyro(1,:)+time_offset_to_imu_local, gyro_mag_gopro/max(gyro_mag_gopro), 'r-','LineWidth',2);hold on;
+                    plot(obj.imugps.time, gyro_org/max(gyro_org), 'b-','LineWidth',2);grid on;
                     legend({'gopro gyro','gyro'});
                     title('After Alignment');
                     
                     %% more results
                     flow_times = ((1:length(flow))-1)./obj.video.camera_model.frame_rate;
-                    flow_times = flow_times + obj.video.frame_ts - obj.video.gopro_gyro(1,1);
+                    flow_times = flow_times + obj.video.frame_ts;
                     
                     subplot(4,1,3);
-                    plot(flow_times+time_offset, flow/max(flow), 'r-','LineWidth',2);hold on;
-                    plot(gyro_times, gyro_org/max(gyro_org), 'b-','LineWidth',2);grid on;
+                    plot(flow_times+time_offset_to_imu_local, flow/max(flow), 'r-','LineWidth',2);hold on;
+                    plot(obj.imugps.time, gyro_org/max(gyro_org), 'b-','LineWidth',2);grid on;
                     legend({'flow','gyro'});
                     title('After Alignment');
                     
                     subplot(4,1,4);
-                    gps_times = obj.video.gopro_gps(1,:) - obj.video.gopro_gyro(1,1);
+                    gps_times = obj.video.gopro_gps(1,:);
                     vgn = vecnorm(obj.imugps.vg);
                     
-                    plot(gps_times+time_offset, obj.video.gopro_gps(6,:), 'r-','LineWidth',2);hold on;
-                    plot(gyro_times, vgn, 'b-','LineWidth',2);grid on;
+                    plot(gps_times+time_offset_to_imu_local, obj.video.gopro_gps(6,:), 'r-','LineWidth',2);hold on;
+                    plot(obj.imugps.time, vgn, 'b-','LineWidth',2);grid on;
                     legend({'gopro gyro','gyro'});
                     title('After Alignment');
                 end
