@@ -28,3 +28,7 @@ examples/test_on_np.py
 3rdparty/liegroups/
 
 matlab/test/*.m
+
+matlab/gyro.txt
+
+matlab/framestamps.txt
