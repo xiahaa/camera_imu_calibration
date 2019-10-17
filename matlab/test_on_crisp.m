@@ -1,3 +1,7 @@
+% Change the current folder to the folder of this m-file.
+if(~isdeployed)
+  cd(fileparts(which(mfilename)));
+end
 %% first of all add path
 addpath(genpath('/Volumes/document/camera_imu_calibration/matlab/'));
 %% constants 
