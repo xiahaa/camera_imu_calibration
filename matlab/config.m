@@ -1,0 +1,2 @@
+isDTU=true;
+isUAV=true;
