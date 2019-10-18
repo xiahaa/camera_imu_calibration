@@ -55,6 +55,7 @@ classdef Slice < handle
                         obj.axis = -obj.axis;
                     end
                     obj.inliers = idx;
+                    disp(['mean reprojection error: ', num2str(mean(dist(obj.inliers)))]);
                 end
             end
             axis = obj.axis;
