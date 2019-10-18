@@ -16,6 +16,7 @@ classdef GPS_IMU_Stream < handle
         time;
         start_time;
         rate;
+        q;
     end
     methods
         function obj=GPS_IMU_Stream(rate)
@@ -36,6 +37,8 @@ classdef GPS_IMU_Stream < handle
             obj.time = [];
             obj.start_time = [];
             obj.rate = rate;
+            
+            obj.q = [];
         end
         
         function from_mat(obj,filename,varargin)
@@ -145,6 +148,10 @@ classdef GPS_IMU_Stream < handle
 %                 obj.vg(:,i) = R*obj.vb(:,i);
 %                 obj.ag(:,i) = R*obj.ab(:,i);
 %             end
+            qq = dcm2q(R)';
+            obj.q = zeros(size(qq));
+            obj.q(1,:) = qq(end,:);
+            obj.q(2:4,:) = qq(1:3,:);
         end
     end
     methods(Static)
