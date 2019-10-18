@@ -120,7 +120,7 @@ classdef Slice < handle
                         % detect features in the first frame
                         config;
                         if isDTU == true
-                            seq_start_points=feature_detection(seq_frames{1},gftt_params,true);
+                            seq_start_points=feature_detection(seq_frames{1},gftt_params,true,false);
                         else
                             seq_start_points=feature_detection(seq_frames{1},gftt_params);
                         end

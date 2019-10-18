@@ -15,6 +15,7 @@ classdef VideoStream < handle
         gopro_gyro;
         gopro_acc;
         num;
+        gopro_f;
     end
     methods
         function obj = VideoStream(camera_model, flow_mode)
@@ -31,6 +32,7 @@ classdef VideoStream < handle
             obj.gopro_gps = [];
             obj.gopro_gyro = [];
             obj.gopro_acc = [];
+            obj.gopro_f = [];
         end
         
         function imgpoints = project(obj, points)
@@ -128,6 +130,8 @@ classdef VideoStream < handle
                 id = obj.gopro_gyro(1,:) > obj.start_time;
                 obj.gopro_gyro = obj.gopro_gyro(:,id);
                 obj.gopro_acc = obj.gopro_acc(:,id);
+                
+                obj.gopro_f = 1./mean(diff(obj.gopro_gyro(1,:)));
             end
             if nargin >= 6
                 gps=load(varargin{4});

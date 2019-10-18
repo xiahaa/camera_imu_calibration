@@ -14,13 +14,24 @@ function features = feature_detection(img, varargin)
         use_mask = false;
     end
     
+    if nargin >= 4
+        use_resize = varargin{3};
+    else
+        use_resize = true;
+    end
+    
     mask = uint8(ones(size(img)));
     if use_mask
         config;
         if isUAV==true
             % for test on M600
-            mask(200:1520,200:700)=0;
-            mask(200:1520,2100:2600)=0;
+            if use_resize == true 
+                mask(100:760,100:350)=0;
+                mask(100:760,1050:1300)=0;
+            else
+                mask(200:1520,200:700)=0;
+                mask(200:1520,2100:2600)=0;
+            end
         else
             % for test on trolley
             mask(end-200:end,:) = 0;
