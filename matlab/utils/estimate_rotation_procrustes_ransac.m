@@ -46,7 +46,7 @@ function [R, t, dist, ransac_consensus_idx] = estimate_rotation_procrustes_ransa
     model_points = 2;
     ransac_iterations = round(log(1 - inlier_selection_prob) / log(1-inlier_ratio^model_points));
     
-    [model_est, ransac_consensus_idx] = RANSAC(model_func, eval_func, data, model_points, ransac_iterations, threshold, refine);
+    [model_est, ransac_consensus_idx] = adaRANSAC(model_func, eval_func, data, model_points, threshold, refine);
     
     if ~isempty(model_est)
         R=model_est{1};
