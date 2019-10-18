@@ -118,7 +118,12 @@ classdef Slice < handle
                     seq_frames{end+1} = im;
                     if length(seq_frames) == next_seq_length
                         % detect features in the first frame
-                        seq_start_points=feature_detection(seq_frames{1},gftt_params);
+                        config;
+                        if isDTU == true
+                            seq_start_points=feature_detection(seq_frames{1},gftt_params,true);
+                        else
+                            seq_start_points=feature_detection(seq_frames{1},gftt_params);
+                        end
                         [points, status] = tracking.track_retrack(seq_frames,seq_start_points,0.5,false,true);
                         if length(status) >= min_slice_points
                             % consider this slice is good

@@ -16,7 +16,15 @@ function features = feature_detection(img, varargin)
     
     mask = uint8(ones(size(img)));
     if use_mask
-        mask(end-200:end,:) = 0;
+        config;
+        if isUAV==true
+            % for test on M600
+            mask(200:1520,200:700)=0;
+            mask(200:1520,2100:2600)=0;
+        else
+            % for test on trolley
+            mask(end-200:end,:) = 0;
+        end
     end
     
     features = cv.goodFeaturesToTrack(img, 'MaxCorners',GFTT_PARAMS.max_corners, 'QualityLevel',GFTT_PARAMS.quality_level, ...
