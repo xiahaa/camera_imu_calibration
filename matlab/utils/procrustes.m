@@ -19,7 +19,7 @@ function varargout = procrustes(X,Y,remove_mean)
 %     R = U*diag([1,1,det(U*V)])*V;
     
     [U,~,V]=svd(Yhat*Xhat');
-    R = V*diag([1,1,det(V*U')])*U';
+    R = V*diag([1,1,sign(det(V*U'))])*U';
     varargout{1}=R;
     if remove_mean
         t = mean(X,2) - R*mean(Y,2);
