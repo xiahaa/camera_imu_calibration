@@ -161,8 +161,9 @@ model_points = 2;
 threshold = 8.0*pi/180;% tunable
 
 data = [videoaxes;gyroaxes];
-R = adaRANSAC(model_func, @eval_func, data, model_points, threshold, true);
-[n, theta] = rotation_matrix_to_axis_angle(R);
+R1 = adaRANSAC(model_func, @eval_func, data, model_points, threshold, true);
+[n, theta] = rotation_matrix_to_axis_angle(R1);
+save(fullfile(foldername,'R1.mat'),'R1');
 
 function theta=eval_func(model, d)
     X=d(1:3,:);

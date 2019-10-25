@@ -9,6 +9,12 @@ else
     load(fullfile(foldername,'position.mat'));
 end
 
+% time: where you start computing, TODO, make this automatically
+start_id = 600;
+fid = fopen(fullfile(foldername,'time.txt'),'r');
+time = fscanf(fid,'%f %f',[2,inf])';
+% time = time(start_id+1:end,:);
+
 pos = data.data;
 N = length(pos);
 Nm = round((size(pos,2)-1)/4);
@@ -38,6 +44,7 @@ Nm = round((size(pos,2)-1)/4);
 
 id = find(sum(isnan(pos),2) == 0,1);
 pos = pos(id:end,:);
+time = time(pos(:,1)+start_id+1,:);
 for i = 2:N
     pos1 = pos(i,[3,4,5]);
     pos2 = pos(i,[7,8,9]);
@@ -118,8 +125,11 @@ pos2 = pos(:,[1,7,8,9]);
 % filter out nan
 id = sum(isnan(pos1),2) == 0;
 pos1 = pos1(id,:);
+time1 = time(id,:);
+
 id = sum(isnan(pos2),2) == 0;
 pos2 = pos2(id,:);
+time2 = time(id,:);
 
 %% filtering, interpolation to make data consistent
 hsize = 3;
@@ -164,8 +174,11 @@ for i = 1:length(pos2)
     end
 end
 
-posfit1 = posfit1(1:end-60,:);
-posfit2 = posfit2(1:end-60,:);
+posfit1 = posfit1(1:end-240,:);
+posfit2 = posfit2(1:end-240,:);
+
+time1 = time1(1:end-240,:);
+time2 = time2(1:end-240,:);
 
 %% check
 figure(1)
@@ -178,8 +191,10 @@ subplot(3,1,1);plot(pos2(:,2));hold on;grid on;plot(posfit2(:,2),'-o');
 subplot(3,1,2);plot(pos2(:,3));hold on;grid on;plot(posfit2(:,3),'-o');
 subplot(3,1,3);plot(pos2(:,4));hold on;grid on;plot(posfit2(:,4),'-o');
 
+pos1=posfit1;
+pos2=posfit2;
 
-save(fullfile(foldername,'position_rec.mat'),'pos1','pos2');
+save(fullfile(foldername,'position_rec.mat'),'pos1','pos2','time1','time2');
 
 
 

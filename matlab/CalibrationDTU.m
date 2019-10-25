@@ -54,10 +54,21 @@ classdef CalibrationDTU < handle
             end
             
 %             try
-            obj.R2 = find_R2(obj);
-            R = find_R1(obj);
-                
-%                 t2 = find_t2(obj);
+            R2 = find_R2(obj);
+            t2 = find_t2(obj);
+%             R1 = find_R1(obj);
+    
+            %% todo, right now use the cheesboard solution is more accurate
+            if ismac
+                 idcs   = strfind(obj.save_path,'/');
+            else
+                idcs   = strfind(obj.save_path,'\');
+            end
+            newdir = obj.save_path(1:idcs(end-1)-1);
+            R1 = load(fullfile(newdir,'R1.mat'));
+            filename = fullfile(obj.save_path,'extrinsics.mat'); 
+            save(filename,'R2','R1','t2');
+            
 %             catch
                 
 %             end
@@ -159,9 +170,23 @@ classdef CalibrationDTU < handle
             h0 = 97.717;
             [lly,llx,llz]=geodetic2ned(obj.video.gopro_gps(2,:),obj.video.gopro_gps(3,:),obj.video.gopro_gps(4,:),lat0,long0,h0,wgs84);
             llz = -llz;
+            % find start point
+            [minval,minid] = min(abs(obj.imugps.time-(obj.video.gopro_gps(1,1)+obj.params.initialized.time_offset)));
+            if minval < 0.01
+                % relative to start point
+                llx = llx - llx(1);
+                lly = lly - lly(1);
+                llz = llz - llz(1);
+                % make imugps relative to start point
+                imugps_p = obj.imugps.p-obj.imugps.p(:,minid);
+            end
+            
             vel_mag = (obj.video.gopro_gps(5,:));
             id = vel_mag > (mean(vel_mag)+0.3*std(vel_mag));
             gps_temp = obj.video.gopro_gps(:,id);
+            
+            llx = llx(id);lly = lly(id);llz = llz(id);
+            
             idalign = 1;
             x = zeros(4,length(gps_temp));
             y = zeros(4,length(gps_temp));
@@ -173,7 +198,7 @@ classdef CalibrationDTU < handle
                 if minval < 0.01
                     % valid
                     x(:,i) = [llx(i);lly(i);llz(i);vel_mag(i)];
-                    y(:,i) = [obj.imugps.p(:,minid);vgn(minid)];
+                    y(:,i) = [imugps_p(:,minid);vgn(minid)];
                     rpy(:,i) = [obj.imugps.yaw(minid);obj.imugps.pitch(minid);obj.imugps.roll(minid)];
                     idalign = minid;
                 else
@@ -186,8 +211,39 @@ classdef CalibrationDTU < handle
             y(:,i+1:end)=[];
             rpy(:,i+1:end)=[];
             
-            id = (abs(x(end,:)-y(end,:))<0.2);
+            id = (vecnorm(x(1:3,:)-y(1:3,:))<0.5);
             x = x(:,id); y = y(:,id);
+            
+            h = struct();
+            h.fig = figure('Name','t2 Alignment Data Preparation', 'NumberTitle','off', 'Menubar','none', ...
+                        'Pointer','cross', 'Resize','on', 'Position',[100 100 400 400]);
+            if ~mexopencv.isOctave()
+                %HACK: not implemented in Octave
+                movegui(h.fig, 'east');
+            end
+            h.ax = axes('Parent',h.fig, 'Units','normalized', 'Position',[0 0 1 1]);
+            subplot(h.ax);
+            subplot(5,1,1);
+            plot(obj.imugps.time,vecnorm(obj.imugps.vg));hold on;grid on;
+            plot(obj.video.gopro_gps(1,:)+obj.params.initialized.time_offset,obj.video.gopro_gps(5,:));
+            plot(gps_temp(1,:)+obj.params.initialized.time_offset,gps_temp(5,:),'g+')
+
+            subplot(5,1,2);
+            plot(x(1,:));hold on;
+            plot(y(1,:));grid on;
+            
+            subplot(5,1,3);
+            plot(x(2,:));hold on;
+            plot(y(2,:));grid on;
+            
+            subplot(5,1,4);
+            plot(x(3,:));hold on;
+            plot(y(3,:));grid on;
+            
+            subplot(5,1,5);
+            plot(x(4,:));hold on;
+            plot(y(4,:));grid on;
+            
             %% now we have data
             b = x(1:3,:) - y(1:3,:); b = vec(b);
             
@@ -195,7 +251,7 @@ classdef CalibrationDTU < handle
             A = reshape(permute(R,[1,3,2]),[],3);
             
             manual_measure = [0;0.197;-0.080];
-            bnd = [0.010;0.010;0.010]*5;
+            bnd = [0.030;0.050;0.010];
             lb = manual_measure - bnd;
             ub = manual_measure + bnd;
             t2 = quadprog(2*(A'*A),-2*b'*A,[],[],[],[],lb,ub);
