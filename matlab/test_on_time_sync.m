@@ -9,6 +9,7 @@ else
     end
     addpath(genpath('./'));
 end
+
 %% constants 
 GYRO_RATE_GUESS = 200;
 CAMERA_FRAME_RATE = 30.0;
@@ -44,7 +45,7 @@ fprintf('Creating video stream from %s',videofile);
 video=VideoStream(camera, 'optical');
 try
     gen_gopro_mat(videofile);
-    video.from_file(videofile,5,60,fullfile(filepath,'gopro_imu'),fullfile(filepath,'gopro_gps'));
+    video.from_file(videofile,15,25,fullfile(filepath,'gopro_imu'),fullfile(filepath,'gopro_gps'));
 catch
     video.from_file(videofile,5,inf);
 end
