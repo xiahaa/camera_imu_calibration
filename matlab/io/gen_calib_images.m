@@ -17,7 +17,7 @@ function gen_calib_images(videofile)
     meanvar = mean(vars);
     stdvars = std(vars);
     
-    index = find((vars - meanvar) > 0.5 * stdvars);
+    index = find((vars - meanvar) > 1 * stdvars);
     
     if exist(fullfile(dir,name),'dir') == 0
         mkdir(fullfile(dir,name));
@@ -41,23 +41,34 @@ function gen_calib_images(videofile)
                 old_corners = new_corners;
             else
                 area1 = (new_corners{end}(1) - new_corners{1}(1)) * (new_corners{end}(2) - new_corners{1}(2));
+                overlap = [max(new_corners{1}(1), old_corners{1}(1)), ...
+                           min(new_corners{end}(1), old_corners{end}(1)), ...
+                           max(new_corners{1}(2), old_corners{1}(2)), ...
+                           min(new_corners{end}(2), old_corners{end}(2))];
+                areaoverlap = (overlap(2)-overlap(1))*(overlap(4)-overlap(3));
+                if areaoverlap<0, areaoverlap = 0; end
                 area2 = (old_corners{end}(1) - old_corners{1}(1)) * (old_corners{end}(2) - old_corners{1}(2));
-                if abs(area1/area2-1) < 0.5
-                    displacement = cellfun(@(t1,t2) (sum(abs(t1-t2))), new_corners, old_corners);
-                    displacement = mean(displacement);
-                    if displacement < 40
-                        continue;
-                    end
-                else
-                    if area1 / (size(new_frame_gray,1)*size(new_frame_gray,2)) < 0.3
-                        continue;
-                    end
-                    displacement = cellfun(@(t1,t2) (sum(abs(t1-t2))), new_corners, old_corners);
-                    displacement = mean(displacement);
-                    if displacement < 50
-                        continue;
-                    end
+                iou = areaoverlap/(area1 + area2 - areaoverlap);
+                if iou > 0.3
+                    continue;
                 end
+                
+%                 if abs(area1/area2-1) < 0.5
+%                     displacement = cellfun(@(t1,t2) (sum(abs(t1-t2))), new_corners, old_corners);
+%                     displacement = mean(displacement);
+%                     if displacement < 40
+%                         continue;
+%                     end
+%                 else
+%                     if area1 / (size(new_frame_gray,1)*size(new_frame_gray,2)) < 0.3
+%                         continue;
+%                     end
+%                     displacement = cellfun(@(t1,t2) (sum(abs(t1-t2))), new_corners, old_corners);
+%                     displacement = mean(displacement);
+%                     if displacement < 50
+%                         continue;
+%                     end
+%                 end
                 imgc = cat(2,old_frame_gray,new_frame_gray);
                 imshow(imgc);hold on;
                 cmap = jet(patternsize(1)*patternsize(2));
