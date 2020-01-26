@@ -19,6 +19,7 @@ import argparse
 import numpy as np
 
 sys.path.insert(0,'./')
+sys.path.insert(0,'./3rdparty')
 
 import crisp
 import crisp.rotations
