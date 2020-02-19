@@ -33,3 +33,4 @@ matlab/gyro.txt
 
 matlab/framestamps.txt
 *.asv
+matlab/configParams.m
