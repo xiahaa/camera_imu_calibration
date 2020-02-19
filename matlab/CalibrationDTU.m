@@ -8,6 +8,8 @@ classdef CalibrationDTU < handle
         save_path;
         result;
         R2;
+        master_state;
+        t2;
     end
     methods
         function obj = CalibrationDTU(video,imugps,debug_level,save_path)
@@ -18,8 +20,18 @@ classdef CalibrationDTU < handle
             obj.dbg_level = 5;
             obj.save_path = save_path;
             obj.result = zeros(8,1);
+            obj.master_state = [];
+            obj.t2 = [];
         end
         function initialize(obj,gyro_rate,varargin)
+            if nargin > 2
+                obj.master_state = varargin{1};
+            end
+            
+            if nargin > 3
+                obj.t2 = varargin{2};
+            end          
+            
             obj.params.users.gyro_rate = gyro_rate;
             disp(['gyro rate is ',num2str(gyro_rate)]);
             obj.params.initialized.gyro_bias = zeros(3,1);
@@ -74,7 +86,7 @@ classdef CalibrationDTU < handle
 %             end
             
             %% now estimate relative rotation 
-            R = obj.find_initial_rotation(); % TODO
+%             R = obj.find_initial_rotation(); % TODO
         end
         
         function calibrate(obj, varargin)
@@ -165,9 +177,15 @@ classdef CalibrationDTU < handle
         function t2 = find_t2(obj)
             %% lsq to find t2, use RANSAC
             wgs84 = wgs84Ellipsoid;
-            lat0 = 55+46/60+59.62892/3600;
-            long0 = 12+30/60+57.55967/3600;
-            h0 = 97.717;
+            if isempty(obj.master_state)
+                lat0 = 55+46/60+59.62892/3600;
+                long0 = 12+30/60+57.55967/3600;
+                h0 = 97.717;
+            else
+                lat0 = obj.master_state.lat(1)+obj.master_state.lat(2)/60+obj.master_state.lat(3)/3600;
+                long0 = obj.master_state.lon(1)+obj.master_state.lon(2)/60+obj.master_state.lon(3)/3600;
+                h0 = obj.master_state.h;
+            end
             [lly,llx,llz]=geodetic2ned(obj.video.gopro_gps(2,:),obj.video.gopro_gps(3,:),obj.video.gopro_gps(4,:),lat0,long0,h0,wgs84);
             llz = -llz;
             % find start point
@@ -250,7 +268,11 @@ classdef CalibrationDTU < handle
             R = angle2dcm(rpy(1,id),rpy(2,id),rpy(3,id));
             A = reshape(permute(R,[1,3,2]),[],3);
             
-            manual_measure = [0;0.197;-0.080];
+            if isempty(obj.t2)
+                manual_measure = [0;0.197;-0.080];
+            else
+                manual_measure = obj.t2;
+            end
             bnd = [0.030;0.050;0.010];
             lb = manual_measure - bnd;
             ub = manual_measure + bnd;

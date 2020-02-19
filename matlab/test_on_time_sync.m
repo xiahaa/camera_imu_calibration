@@ -10,29 +10,19 @@ else
     addpath(genpath('./'));
 end
 
-%% constants 
-GYRO_RATE_GUESS = 200;
-CAMERA_FRAME_RATE = 30.0;
-CAMERA_IMAGE_SIZE = [2704, 1520];
-CAMERA_READOUT = 0.03;
+
 %% 
-if ismac
-    base = '/Volumes/document/camera_imu_calibration/data/calibration/1016/3';
-else
-    base = 'D:/dtu/data/hand_eye/1016/3';
-end
-videofile = fullfile(base,'GH014308.MP4');
-imufile = fullfile(base,'imugps.mat');
-califile = fullfile(base,'cali_param_10_16_17_41.yml');
-fprintf('opening: \n\t %s \n\t %s \n\t %s',videofile, imufile, califile);
-[filepath,name,ext] = fileparts(videofile);
+params = configParams();
+
+fprintf('opening: \n\t %s \n\t %s \n\t %s',params.videofile, params.imufile, params.califile);
+[filepath,name,ext] = fileparts(params.videofile);
 
 %% load imu gps data
-imugps = GPS_IMU_Stream(GYRO_RATE_GUESS);
-imugps.from_mat(imufile, 5);
+imugps = GPS_IMU_Stream(params.GYRO_RATE_GUESS);
+imugps.from_mat(params.imufile, 0);
 
 %% load camera calibration file
-fs=cv.FileStorage(califile);
+fs=cv.FileStorage(params.califile);
 CAMERA_MATRIX = fs.Camera_Matrix;
 CAMERA_DIST = fs.Distortion_Coefficients;
 disp(CAMERA_MATRIX);
@@ -40,14 +30,13 @@ fprintf('\n');
 disp(CAMERA_DIST);
 
 %% load video
-camera = OpenCVCameraModel(CAMERA_IMAGE_SIZE, CAMERA_FRAME_RATE, CAMERA_READOUT, CAMERA_MATRIX, CAMERA_DIST);
-fprintf('Creating video stream from %s',videofile);
+camera = OpenCVCameraModel(params.CAMERA_IMAGE_SIZE, params.CAMERA_FRAME_RATE, params.CAMERA_READOUT, CAMERA_MATRIX, CAMERA_DIST);
+fprintf('Creating video stream from %s',params.videofile);
 video=VideoStream(camera, 'optical');
 try
-    gen_gopro_mat(videofile);
-    video.from_file(videofile,15,25,fullfile(filepath,'gopro_imu'),fullfile(filepath,'gopro_gps'));
+    video.from_file(params.videofile,50,20,fullfile(filepath,'gopro_imu'),fullfile(filepath,'gopro_gps'));
 catch
-    video.from_file(videofile,5,inf);
+    video.from_file(params.videofile,5,inf);
 end
 % video.play();
 
@@ -58,7 +47,7 @@ end
 save_path = fullfile(filepath,name,'tmp');
 calib = CalibrationDTU(video,imugps,5,save_path);
 % % try
-    calib.initialize(GYRO_RATE_GUESS);
+    calib.initialize(params.GYRO_RATE_GUESS,params.Masterdata,params.t2);
 % % catch
 % %     error('calibration failure');
 % % end
