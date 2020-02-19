@@ -273,7 +273,7 @@ classdef CalibrationDTU < handle
             else
                 manual_measure = obj.t2;
             end
-            bnd = [0.030;0.050;0.010];
+            bnd = [0.010;0.010;0.010];
             lb = manual_measure - bnd;
             ub = manual_measure + bnd;
             t2 = quadprog(2*(A'*A),-2*b'*A,[],[],[],[],lb,ub);
