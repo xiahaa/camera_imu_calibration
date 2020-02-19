@@ -122,6 +122,7 @@ classdef VideoStream < handle
 
             %% special part if you can parse gopro data
             if nargin >= 5
+                gen_gopro_mat(filename);
                 imu=load(varargin{3});
                 obj.gopro_gyro = imu.gopro_imu(:,5:8)';
                 obj.gopro_gyro(1,:)=obj.gopro_gyro(1,:)*1e-3;%mesc to s
