@@ -19,7 +19,7 @@ fprintf('opening: \n\t %s \n\t %s \n\t %s',params.videofile, params.imufile, par
 
 %% load imu gps data
 imugps = GPS_IMU_Stream(params.GYRO_RATE_GUESS);
-imugps.from_mat(params.imufile, 0);
+imugps.from_mat(params.imufile, params.init_imu_t);
 
 %% load camera calibration file
 fs=cv.FileStorage(params.califile);
@@ -34,9 +34,9 @@ camera = OpenCVCameraModel(params.CAMERA_IMAGE_SIZE, params.CAMERA_FRAME_RATE, p
 fprintf('Creating video stream from %s',params.videofile);
 video=VideoStream(camera, 'optical');
 try
-    video.from_file(params.videofile,50,20,fullfile(filepath,'gopro_imu'),fullfile(filepath,'gopro_gps'));
+    video.from_file(params.videofile,params.init_cam_t,params.duration_cam_t,fullfile(filepath,'gopro_imu'),fullfile(filepath,'gopro_gps'));
 catch
-    video.from_file(params.videofile,5,inf);
+    video.from_file(params.videofile,params.init_cam_t,inf);
 end
 % video.play();
 
