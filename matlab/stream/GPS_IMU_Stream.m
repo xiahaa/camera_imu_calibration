@@ -45,7 +45,7 @@ classdef GPS_IMU_Stream < handle
             imudata = load(filename);
             imudata = imudata.imugps;
             % 100hz timestamp to 200hz
-            for i = 1:2:length(imudata)
+            for i = 1:2:length(imudata)-1
                 t1 = imudata(i,1);
                 t2 = imudata(i+1,1);
                 if t1 == t2
