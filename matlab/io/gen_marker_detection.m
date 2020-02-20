@@ -1,10 +1,15 @@
 clc;close all;
-
-foldername = 'D:\dtu\data\hand_eye\1016\3\GH014308\imgs';
+addpath('../misc');
+basename = configdata();
+videofile = dir(fullfile(basename,'*.MP4'));
+[~,name,ext] = fileparts(videofile.name);
+foldername = fullfile(basename,name,'img');
 
 if ~exist(fullfile(foldername,'position.mat'),'file')
     filename = fullfile(foldername,'position.log');
-    data = uiimport(filename);
+%     data = uiimport(filename);
+    data = txtread(filename);
+    save(fullfile(foldername,'position.mat'),'data');
 else
     load(fullfile(foldername,'position.mat'));
 end
@@ -15,7 +20,7 @@ fid = fopen(fullfile(foldername,'time.txt'),'r');
 time = fscanf(fid,'%f %f',[2,inf])';
 % time = time(start_id+1:end,:);
 
-pos = data.data;
+pos = data;
 N = length(pos);
 Nm = round((size(pos,2)-1)/4);
 %% make id consistent
@@ -123,11 +128,11 @@ pos1 = pos(:,[1,3,4,5]);
 pos2 = pos(:,[1,7,8,9]);
 
 % filter out nan
-id = sum(isnan(pos1),2) == 0;
+id = sum(isnan(pos1),2) == 0 & pos1(:,2) ~= -1;
 pos1 = pos1(id,:);
 time1 = time(id,:);
 
-id = sum(isnan(pos2),2) == 0;
+id = sum(isnan(pos2),2) == 0 & pos2(:,2) ~= -1;
 pos2 = pos2(id,:);
 time2 = time(id,:);
 
@@ -198,6 +203,20 @@ save(fullfile(foldername,'position_rec.mat'),'pos1','pos2','time1','time2');
 
 
 
-
+function data = txtread(txtfile)
+    fid = fopen(txtfile,'r');
+    l = fgetl(fid);%% skip first line
+    num = 1;
+    data = NaN(50000,9);
+    while ~feof(fid)
+        l = fgetl(fid);
+        cntdata = split(l,',');
+        datarow = str2num(str2mat(cntdata))';
+        data(num,1:length(datarow)) = datarow;
+        num = num + 1;
+    end
+    data(num:end,:) = [];
+    fclose(fid);
+end
 
 
