@@ -43,7 +43,9 @@ classdef GPS_IMU_Stream < handle
         
         function from_mat(obj,filename,varargin)
             imudata = load(filename);
-            imudata = imudata.imugps;
+            s = fieldnames(imudata);
+            imudata = getfield(imudata,s{1});
+%             imudata = imudata.imugps;
             % 100hz timestamp to 200hz
             for i = 1:2:length(imudata)-1
                 t1 = imudata(i,1);
