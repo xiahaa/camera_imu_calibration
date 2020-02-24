@@ -35,3 +35,4 @@ matlab/framestamps.txt
 *.asv
 matlab/configParams.m
 matlab/misc/configdata.m
+matlab/misc/calib_config.json

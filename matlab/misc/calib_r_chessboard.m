@@ -2,7 +2,12 @@ clc;close all; clear all;
 % this file trys to calibrate the relative rotation between gopro image and
 % gopro imu based on a chessboard.
 
-foldername = 'D:\dtu\data\calibration\gopro\GH014310';
+fid = fopen('calib_config.json', 'r');
+str = fread(fid, '*char').';
+fclose(fid);
+J = jsondecode(str);
+
+foldername = J.folder.foldername;%'D:\dtu\data\calibration\gopro\1219\GH014320';%'D:\dtu\data\calibration\gopro\GH014310';
 
 files = dir(foldername);
 
@@ -24,7 +29,23 @@ if ~exist(fullfile(foldername,'cameraR.mat'),'file')
     squareSize = 0.112;
     [X,Y] = ndgrid(0:patternSize(1)-1, 0:patternSize(2)-1);
     pts_o = [X(:)*squareSize Y(:)*squareSize zeros(prod(patternSize),1)];  % Z=0
-    califile = fullfile(foldername,'cali_param_10_16_17_41.yml');
+    %%
+    files = dir(fullfile(foldername,'*.yml'));
+    latest = [];
+    for i = length(files)
+        file = dir(fullfile(files(i).folder,files(i).name));
+        if isempty(latest)
+            latest.id = i;
+            latest.date = datenum(file.date);
+        else
+            if datenum(file.date) > latest.date
+                latest.id = i;
+                latest.date = datenum(file.date);
+            end
+        end
+    end
+    califile = fullfile(files(latest.id).folder,files(latest.id).name);
+%     califile = fullfile(foldername,'cali_param_12_23_14_12.yml');
     fs=cv.FileStorage(califile);
     CAMERA_MATRIX = fs.Camera_Matrix;
     CAMERA_DIST = fs.Distortion_Coefficients;
