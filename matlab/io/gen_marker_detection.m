@@ -49,7 +49,7 @@ Nm = round((size(pos,2)-1)/4);
 
 id = find(sum(isnan(pos),2) == 0,1);
 pos = pos(id:end,:);
-time = time(pos(:,1)+start_id+1,:);
+time = time(pos(:,1)+start_id,:);
 for i = 2:N
     pos1 = pos(i,[3,4,5]);
     pos2 = pos(i,[7,8,9]);
