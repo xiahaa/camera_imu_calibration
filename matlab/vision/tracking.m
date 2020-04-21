@@ -44,6 +44,12 @@ classdef tracking
                 h.ax = axes('Parent',h.fig, 'Units','normalized', 'Position',[0 0 1 1]);
             end
             
+%             writevid = 1;
+%             if writevid
+%                 vidObj = VideoWriter(['C:/Users/xiahaa/Desktop/figs/mandatorytalk/system/detect.avi']);
+%                 open(vidObj);
+%             end
+            
             while true
                 img = videohandle.read();
                 if isempty(img), break; end
@@ -59,9 +65,13 @@ classdef tracking
                 [curr_points,status,err] = cv.calcOpticalFlowPyrLK(prev_img, img, prev_points);
                 
                 %
-                valids = status ~= 0;
+                valids = status ~= 0; rawid = find(valids);
                 distance = cellfun(@(a,b) norm(a-b), curr_points(valids), prev_points(valids));
-                
+                meandistance = mean(distance);
+                stddistance = std(distance);
+                goodid = abs(distance-meandistance) < stddistance;
+                rawid(goodid) = [];
+                valids(rawid) = 0;
                 dm = mean(distance(distance<max_diff));
                 
                 if isnan(dm)
@@ -76,10 +86,10 @@ classdef tracking
                 if do_plot
                     imgc = cv.cvtColor(img,'GRAY2RGB');
                     % resize
-                    imgc = cv.circle(imgc, prev_points, 2, 'Thickness','Filled', 'Color',[255,255,0]);
-                    imgc = cv.circle(imgc, curr_points, 2, 'Thickness','Filled', 'Color',[255,0,0]);
+                    imgc = cv.circle(imgc, prev_points, 5, 'Thickness','Filled', 'Color',[255,255,0]);
+                    imgc = cv.circle(imgc, curr_points, 5, 'Thickness','Filled', 'Color',[255,0,0]);
                     tracks = cellfun(@(p1,p2) [p1; p2], prev_points(valids), curr_points(valids), 'UniformOutput',false);
-                    imgc = cv.polylines(imgc, tracks, 'Closed',false, 'Color',[0,255,0]);
+                    imgc = cv.polylines(imgc, tracks, 'Thickness', 2, 'Closed',false, 'Color',[0,255,0]);
                     imgc = cv.resize(imgc,0.5,0.5);
                     try 
                         set(h.img, 'CData',imgc);
@@ -87,8 +97,16 @@ classdef tracking
                         h.img = imshow(imgc, 'Parent',h.ax);
                     end                    
                     drawnow
+%                     if writevid
+%                         fm = getframe; 
+%                         writeVideo(vidObj,fm);
+%                     end
                 end
             end
+%             if writevid
+%                 close(vidObj);
+%             end
+            
             close(h.fig);
             flow(flow_cnt+1:end) = [];
         end
