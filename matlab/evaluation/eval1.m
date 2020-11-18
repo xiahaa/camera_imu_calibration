@@ -1,5 +1,7 @@
 clc;close all;clear all;
 addpath ../misc/
+addpath utils\
+
 [folder, outfolder] = configdata();
 videofile = dir(fullfile(folder,'*.MP4'));
 [~,filename,fileext]=fileparts(videofile.name);
@@ -273,6 +275,8 @@ yticklabels(ytklbs);
 
 print(fullfile(outfolder,'map'),'-dpng','-r300');
 
+rmpath ../misc/
+rmpath utils\
 
 function pos = EKF(pos0, time, y)
     x = [pos0(:,1);[0;0;0]];
