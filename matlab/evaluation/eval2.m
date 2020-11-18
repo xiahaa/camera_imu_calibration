@@ -43,30 +43,20 @@ bird_imugps.from_mat(imufile, 0);
 [gtime1,g_pos1_marker,marker_pos1_in_imu] = compose_g_pos_marker(imugps, time1, pos1, time_offset_to_imu_local, R1.R1, R2, [-0.035;0.115;-0.080],1);
 [gtime2,g_pos2_marker,marker_pos2_in_imu] = compose_g_pos_marker(imugps, time2, pos2, time_offset_to_imu_local, R1.R1, R2, [-0.035;0.115;-0.080],1);
 
-% find bird pose according to the imu's time
-[time1, bird_pos1_in_body, body_pos1_g, Rs1] = estimate_bird_pos(imugps, bird_imugps,gtime1);
-[time2, bird_pos2_in_body, body_pos2_g, Rs2] = estimate_bird_pos(imugps, bird_imugps,gtime2);
-
-% 
-[Ropt1,topt1,final_consensus1] = estimate_rigid_body_transformation_RANSAC(marker_pos1_in_imu, bird_pos1_in_body);
-[Ropt2,topt2,final_consensus2] = estimate_rigid_body_transformation_RANSAC(marker_pos2_in_imu, bird_pos2_in_body);
-
-% align them
-g_pos1_marker_refine = Ropt1 * marker_pos1_in_imu + topt1;
-g_pos2_marker_refine = Ropt2 * marker_pos2_in_imu + topt2;
-
-g_pos1_marker_refine = estimate_align_pos_g(Rs1, body_pos1_g, g_pos1_marker_refine);
-g_pos2_marker_refine = estimate_align_pos_g(Rs2, body_pos2_g, g_pos2_marker_refine);
-
-% find matches
+% find matches 
 [bird_time1, bird_pos1] = find_matches(gtime1,bird_imugps);
 [bird_time2, bird_pos2] = find_matches(gtime2,bird_imugps);
+
+% align them
+[g_pos1_marker_refine] = find_relative_transformation(g_pos1_marker, bird_pos1);
+[g_pos2_marker_refine] = find_relative_transformation(g_pos2_marker, bird_pos2);
 
 g_pos1_marker_refine = EKF(g_pos1_marker_refine, gtime1, bird_pos1);
 g_pos2_marker_refine = EKF(g_pos2_marker_refine, gtime2, bird_pos2);
 
-[Ropt1,topt1,final_consensus1] = estimate_rigid_body_transformation_RANSAC(g_pos1_marker_refine, bird_pos1);
-[Ropt2,topt2,final_consensus2] = estimate_rigid_body_transformation_RANSAC(g_pos2_marker_refine, bird_pos2);
+% find inliers
+[Ropt1,topt1,final_consensus1] = estimate_rigid_body_transformation_RANSAC(g_pos1_marker_refine, bird_pos1,0.1);
+[Ropt2,topt2,final_consensus2] = estimate_rigid_body_transformation_RANSAC(g_pos2_marker_refine, bird_pos2,0.1);
 g_pos1_marker_refine = Ropt1 * g_pos1_marker_refine + topt1;
 g_pos2_marker_refine = Ropt2 * g_pos2_marker_refine + topt2;
 
@@ -138,19 +128,11 @@ disp(s1);
 disp(v2);
 disp(s2);
 
-% err1 = zeros(3, size(g_pos1_marker_refine,2));
-% err2 = zeros(3, size(g_pos2_marker_refine,2));
 err1 = (g_pos1_marker_refine(:,final_consensus1)-bird_pos1(:,final_consensus1));
 err2 = (g_pos2_marker_refine(:,final_consensus2)-bird_pos2(:,final_consensus2));
 
-% inlierid1 = abs(err1 - v1) <= s1*3;
-% inlierid2 = abs(err2 - v2) <= s2*3;
-
 bird_time1 = bird_time1(final_consensus1);
 bird_time2 = bird_time2(final_consensus2);
-
-% err1 = err1(:,inlierid1);
-% err2 = err2(:,inlierid2);
 
 figure(3);
 subplot(3,1,1);

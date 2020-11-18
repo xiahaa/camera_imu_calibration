@@ -31,5 +31,7 @@ function [M,final_consensus] = adaRANSAC(model_func, eval_func, data, num_points
     if recalculate
         final_consensus_set = data(:, final_consensus);
         M = model_func(final_consensus_set);
+        model_error = eval_func(M, data);
+        final_consensus = find(model_error < threshold);
     end
 end
