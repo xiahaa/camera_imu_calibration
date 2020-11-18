@@ -3,8 +3,8 @@ addpath('../misc');
 
 
 % [filename, foldername]  = uigetfile({'*.txt','*.log'});
-% foldername = '/Volumes/document/fore-end/data/20191219/3/tmp/';
-foldername = 'D:/dtu/data/hand_eye/20191219/3/tmp';
+% foldername = '/Volumes/document/fore-end/data/20191219/2/tmp/';
+foldername = 'D:/dtu/data/hand_eye/20191219/1/tmp';
 filename = 'position-raw.txt';%position-Subpixel-Ahn
 [~,name,ext] = fileparts(filename);
 % basename = configdata();
@@ -183,7 +183,7 @@ subplot(3,1,3);plot(pos2(:,4));hold on;grid on;plot(posfit2(:,4),'-o');
 pos1=posfit1;
 pos2=posfit2;
 
-save(fullfile(foldername,'position_rec.mat'),'pos1','pos2','time1','time2');
+save(fullfile(foldername,[name,'-rec.mat']),'pos1','pos2','time1','time2');
 
 
 
