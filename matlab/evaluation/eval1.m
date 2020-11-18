@@ -137,10 +137,11 @@ bird_time2 = bird_time2(final_consensus2);
 figure(3);
 subplot(3,1,1);
 plot(bird_time1, err1(1,:), 'r-', 'LineWidth', 2); hold on;grid on;
-title('Local-Level','FontName','Arial','FontSize',15);
-xlabel('time: (s)','FontName','Arial','FontSize',15);
+% title('Local-Level','FontName','Arial','FontSize',15);
+% xlabel('time: (s)','FontName','Arial','FontSize',15);
 ylabel('x: (m)','FontName','Arial','FontSize',15);
 grid minor;
+axis tight
 maxylim = max(ylim);
 minylim = min(ylim);
 for i = 2:length(bird_time1)
@@ -151,9 +152,10 @@ end
 
 subplot(3,1,2);
 plot(bird_time1, err1(2,:), 'r-', 'LineWidth', 2); hold on;grid on;
-xlabel('time: (s)','FontName','Arial','FontSize',15);
+% xlabel('time: (s)','FontName','Arial','FontSize',15);
 ylabel('y: (m)','FontName','Arial','FontSize',15);
 grid minor;
+axis tight
 maxylim = max(ylim);
 minylim = min(ylim);
 for i = 2:length(bird_time1)
@@ -167,6 +169,7 @@ plot(bird_time1, err1(3,:), 'r-', 'LineWidth', 2); hold on;grid on;
 xlabel('time: (s)','FontName','Arial','FontSize',15);
 ylabel('z: (m)','FontName','Arial','FontSize',15);
 grid minor;
+axis tight
 maxylim = max(ylim);
 minylim = min(ylim);
 for i = 2:length(bird_time1)
@@ -174,16 +177,16 @@ for i = 2:length(bird_time1)
         patch([bird_time1(i-1) bird_time1(i) bird_time1(i) bird_time1(i-1)], [maxylim maxylim minylim minylim], [0.1 0.1 0.1], 'FaceAlpha',0.2,'EdgeColor','none');
     end
 end
-
 print(fullfile(outfolder,'err1'),'-dpng','-r300');
 
 figure(4);
 subplot(3,1,1);
 plot(bird_time2, err2(1,:), 'r-', 'LineWidth', 2); hold on;grid on;
-title('Local-Level','FontName','Arial','FontSize',15);
-xlabel('time: (s)','FontName','Arial','FontSize',15);
+% title('Local-Level','FontName','Arial','FontSize',15);
+% xlabel('time: (s)','FontName','Arial','FontSize',15);
 ylabel('x: (m)','FontName','Arial','FontSize',15);
 grid minor;
+axis tight
 maxylim = max(ylim);
 minylim = min(ylim);
 for i = 2:length(bird_time2)
@@ -194,9 +197,10 @@ end
 
 subplot(3,1,2);
 plot(bird_time2, err2(2,:), 'r-', 'LineWidth', 2); hold on;grid on;
-xlabel('time: (s)','FontName','Arial','FontSize',15);
+% xlabel('time: (s)','FontName','Arial','FontSize',15);
 ylabel('y: (m)','FontName','Arial','FontSize',15);
 grid minor;
+axis tight
 maxylim = max(ylim);
 minylim = min(ylim);
 for i = 2:length(bird_time2)
@@ -210,6 +214,7 @@ plot(bird_time2, err2(3,:), 'r-', 'LineWidth', 2); hold on;grid on;
 xlabel('time: (s)','FontName','Arial','FontSize',15);
 ylabel('z: (m)','FontName','Arial','FontSize',15);
 grid minor;
+axis tight
 maxylim = max(ylim);
 minylim = min(ylim);
 for i = 2:length(bird_time2)
@@ -220,72 +225,72 @@ end
 print(fullfile(outfolder,'err2'),'-dpng','-r300');
 
 %% remake measurements
-vtime1 = bird_time1(1):1/30:bird_time1(end);
-valid1 = ones(1,length(vtime1),'logical');
-for i = 1:length(vtime1)
-    timediff = min(abs(vtime1(i) - bird_time1));
-    if timediff > 5
-        valid1(i) = 0;
-    end
-end
-vtime2 = bird_time2(1):1/30:bird_time2(end);
-valid2 = ones(1,length(vtime2),'logical');
-for i = 1:length(vtime2)
-    timediff = min(abs(vtime2(i) - bird_time2));
-    if timediff > 5
-        valid2(i) = 0;
-    end
-end
-verr1(1,:) = interp1(bird_time1,err1(1,:),vtime1,'linear');
-verr1(2,:) = interp1(bird_time1,err1(2,:),vtime1,'linear');
-verr1(3,:) = interp1(bird_time1,err1(3,:),vtime1,'linear');
-verr1(:,valid1==0) = 0;
-
-verr2(1,:) = interp1(bird_time2,err2(1,:),vtime2,'linear');
-verr2(2,:) = interp1(bird_time2,err2(2,:),vtime2,'linear');
-verr2(3,:) = interp1(bird_time2,err2(3,:),vtime2,'linear');
-verr2(:,valid2==0) = 0;
-
-figure(5);
-subplot(3,1,1);
-plot(vtime1, verr1(1,:), 'r-', 'LineWidth', 2); hold on;grid on;
-title('Local-Level','FontName','Arial','FontSize',15);
-xlabel('time: (s)','FontName','Arial','FontSize',15);
-ylabel('x: (m)','FontName','Arial','FontSize',15);
-grid minor;
-
-subplot(3,1,2);
-plot(vtime1, verr1(2,:), 'r-', 'LineWidth', 2); hold on;grid on;
-xlabel('time: (s)','FontName','Arial','FontSize',15);
-ylabel('y: (m)','FontName','Arial','FontSize',15);
-grid minor;
-
-subplot(3,1,3);
-plot(vtime1, verr1(3,:), 'r-', 'LineWidth', 2); hold on;grid on;
-xlabel('time: (s)','FontName','Arial','FontSize',15);
-ylabel('z: (m)','FontName','Arial','FontSize',15);
-grid minor;
-% print(fullfile(outfolder,'err1'),'-dpng','-r300');
-
-figure(6);
-subplot(3,1,1);
-plot(vtime2, verr2(1,:), 'r-', 'LineWidth', 2); hold on;grid on;
-title('Local-Level','FontName','Arial','FontSize',15);
-xlabel('time: (s)','FontName','Arial','FontSize',15);
-ylabel('x: (m)','FontName','Arial','FontSize',15);
-grid minor;
-
-subplot(3,1,2);
-plot(vtime2, verr2(2,:), 'r-', 'LineWidth', 2); hold on;grid on;
-xlabel('time: (s)','FontName','Arial','FontSize',15);
-ylabel('y: (m)','FontName','Arial','FontSize',15);
-grid minor;
-
-subplot(3,1,3);
-plot(vtime2, verr2(3,:), 'r-', 'LineWidth', 2); hold on;grid on;
-xlabel('time: (s)','FontName','Arial','FontSize',15);
-ylabel('z: (m)','FontName','Arial','FontSize',15);
-grid minor;
+% vtime1 = bird_time1(1):1/30:bird_time1(end);
+% valid1 = ones(1,length(vtime1),'logical');
+% for i = 1:length(vtime1)
+%     timediff = min(abs(vtime1(i) - bird_time1));
+%     if timediff > 5
+%         valid1(i) = 0;
+%     end
+% end
+% vtime2 = bird_time2(1):1/30:bird_time2(end);
+% valid2 = ones(1,length(vtime2),'logical');
+% for i = 1:length(vtime2)
+%     timediff = min(abs(vtime2(i) - bird_time2));
+%     if timediff > 5
+%         valid2(i) = 0;
+%     end
+% end
+% verr1(1,:) = interp1(bird_time1,err1(1,:),vtime1,'linear');
+% verr1(2,:) = interp1(bird_time1,err1(2,:),vtime1,'linear');
+% verr1(3,:) = interp1(bird_time1,err1(3,:),vtime1,'linear');
+% verr1(:,valid1==0) = 0;
+% 
+% verr2(1,:) = interp1(bird_time2,err2(1,:),vtime2,'linear');
+% verr2(2,:) = interp1(bird_time2,err2(2,:),vtime2,'linear');
+% verr2(3,:) = interp1(bird_time2,err2(3,:),vtime2,'linear');
+% verr2(:,valid2==0) = 0;
+% 
+% figure(5);
+% subplot(3,1,1);
+% plot(vtime1, verr1(1,:), 'r-', 'LineWidth', 2); hold on;grid on;
+% title('Local-Level','FontName','Arial','FontSize',15);
+% xlabel('time: (s)','FontName','Arial','FontSize',15);
+% ylabel('x: (m)','FontName','Arial','FontSize',15);
+% grid minor;
+% 
+% subplot(3,1,2);
+% plot(vtime1, verr1(2,:), 'r-', 'LineWidth', 2); hold on;grid on;
+% xlabel('time: (s)','FontName','Arial','FontSize',15);
+% ylabel('y: (m)','FontName','Arial','FontSize',15);
+% grid minor;
+% 
+% subplot(3,1,3);
+% plot(vtime1, verr1(3,:), 'r-', 'LineWidth', 2); hold on;grid on;
+% xlabel('time: (s)','FontName','Arial','FontSize',15);
+% ylabel('z: (m)','FontName','Arial','FontSize',15);
+% grid minor;
+% % print(fullfile(outfolder,'err1'),'-dpng','-r300');
+% 
+% figure(6);
+% subplot(3,1,1);
+% plot(vtime2, verr2(1,:), 'r-', 'LineWidth', 2); hold on;grid on;
+% title('Local-Level','FontName','Arial','FontSize',15);
+% xlabel('time: (s)','FontName','Arial','FontSize',15);
+% ylabel('x: (m)','FontName','Arial','FontSize',15);
+% grid minor;
+% 
+% subplot(3,1,2);
+% plot(vtime2, verr2(2,:), 'r-', 'LineWidth', 2); hold on;grid on;
+% xlabel('time: (s)','FontName','Arial','FontSize',15);
+% ylabel('y: (m)','FontName','Arial','FontSize',15);
+% grid minor;
+% 
+% subplot(3,1,3);
+% plot(vtime2, verr2(3,:), 'r-', 'LineWidth', 2); hold on;grid on;
+% xlabel('time: (s)','FontName','Arial','FontSize',15);
+% ylabel('z: (m)','FontName','Arial','FontSize',15);
+% grid minor;
 % print(fullfile(outfolder,'err2'),'-dpng','-r300');
 
 E = wgs84Ellipsoid;
@@ -294,6 +299,13 @@ long0 = 12+30/60+57.55967/3600;
 h0 = 97.717;
 [lat_bird,lon_bird,h_bird] = ned2geodetic(bird_pos2(2,:),bird_pos2(1,:),-bird_pos2(3,:),lat0,long0,h0,E);
 [lat_marker,lon_marker,h_marker] = ned2geodetic(g_pos2_marker_refine(2,:),g_pos2_marker_refine(1,:),-g_pos2_marker_refine(3,:),lat0,long0,h0,E);
+
+%% to minites
+% lat_bird_m = ((lat_bird - 55) * 60);
+% lat_marker_m = ((lat_marker - 55) * 60);
+% 
+% lon_bird_m = ((lon_bird - 12) * 60);
+% lon_marker_m = ((lon_marker - 12) * 60);
 
 % plot route data
 figure
@@ -304,14 +316,14 @@ plot(lon_marker, lat_marker, 'g-.', 'LineWidth', 2);
 % line(lat_bird(end), lon_bird(end,), 'Marker', 's', ...
 %     'Color', 'b', 'MarkerFaceColor', 'b', 'MarkerSize', 10);
 % xlim([-71.4, -71]); 
-xpos = xlim;
-ypos = ylim;
+xpos = xlim;%[min(lon_bird), max(lon_bird)];
+ypos = ylim;%[min(lat_bird), max(lat_bird)];
 xlim([xpos(1)-0.00001, xpos(2)+0.00001])
 ylim([ypos(1)-0.00001, ypos(2)+0.00001])
-legend({'Ref','Est'},'FontSize',15,'FontName','Arial');
-title('Map View');
-xlabel('Longitude: (degrees)');
-ylabel('Latitude: (degrees)');
+legend({'Ref','Est'},'FontSize',10,'FontName','Arial');
+% title('Map View');
+xlabel('Longitude: minutes ('') seconds ('''') ');
+ylabel('Latitude: minutes ('') seconds ('''') ');
 % outpath = 'D:\dtu\sourcecode\plot_google_map\data';
 % fid = fopen(fullfile(outpath,strcat(filename,'.txt')),'w');
 % for i = 1:length(lon_bird)
@@ -322,6 +334,30 @@ ylabel('Latitude: (degrees)');
 % Google map
 addpath 'D:\dtu\sourcecode\plot_google_map\plot_google_map-master'
 plot_google_map('maptype', 'satellite');
+
+%% ticks to minites
+xtks = xticks - 12;
+ytks = yticks - 55;
+ytkmins = fix(ytks * 60);
+xtkmins = fix(xtks * 60);
+ytksecs = round((ytks * 60 - ytkmins) * 60);
+xtksecs = round((xtks * 60 - xtkmins) * 60);
+
+xtklbs = cell(length(xtks),1);
+for i = 1:2:length(xtks)
+    xtklbs{i} = sprintf('%2d''%2d''''',xtkmins(i),xtksecs(i));
+end
+
+ytklbs = cell(length(ytks),1);
+for i = 1:length(ytks)
+    ytklbs{i} = sprintf('%2d''%2d''''',ytkmins(i),ytksecs(i));
+end
+
+% xtklbs = cellstr(num2str(xtks(:)));
+% ytklbs = cellstr(num2str(ytks(:)));
+xticklabels(xtklbs);
+yticklabels(ytklbs);
+
 print(fullfile(outfolder,'map'),'-dpng','-r300');
 
 
@@ -329,7 +365,7 @@ function pos = EKF(pos0, time, y)
     x = [pos0(:,1);[0;0;0]];
     P = blkdiag(eye(3),eye(3)*1000);
     R1 = eye(3)*0.1;
-    R2 = eye(3)*0.01;
+    R2 = eye(3)*0.009;%0.009 2-3
     Q = eye(6)*1;
     for i = 1:length(pos0)
         C = [eye(3) zeros(3);eye(3) zeros(3)];
