@@ -224,75 +224,8 @@ for i = 2:length(bird_time2)
 end
 print(fullfile(outfolder,'err2'),'-dpng','-r300');
 
-%% remake measurements
-% vtime1 = bird_time1(1):1/30:bird_time1(end);
-% valid1 = ones(1,length(vtime1),'logical');
-% for i = 1:length(vtime1)
-%     timediff = min(abs(vtime1(i) - bird_time1));
-%     if timediff > 5
-%         valid1(i) = 0;
-%     end
-% end
-% vtime2 = bird_time2(1):1/30:bird_time2(end);
-% valid2 = ones(1,length(vtime2),'logical');
-% for i = 1:length(vtime2)
-%     timediff = min(abs(vtime2(i) - bird_time2));
-%     if timediff > 5
-%         valid2(i) = 0;
-%     end
-% end
-% verr1(1,:) = interp1(bird_time1,err1(1,:),vtime1,'linear');
-% verr1(2,:) = interp1(bird_time1,err1(2,:),vtime1,'linear');
-% verr1(3,:) = interp1(bird_time1,err1(3,:),vtime1,'linear');
-% verr1(:,valid1==0) = 0;
-% 
-% verr2(1,:) = interp1(bird_time2,err2(1,:),vtime2,'linear');
-% verr2(2,:) = interp1(bird_time2,err2(2,:),vtime2,'linear');
-% verr2(3,:) = interp1(bird_time2,err2(3,:),vtime2,'linear');
-% verr2(:,valid2==0) = 0;
-% 
-% figure(5);
-% subplot(3,1,1);
-% plot(vtime1, verr1(1,:), 'r-', 'LineWidth', 2); hold on;grid on;
-% title('Local-Level','FontName','Arial','FontSize',15);
-% xlabel('time: (s)','FontName','Arial','FontSize',15);
-% ylabel('x: (m)','FontName','Arial','FontSize',15);
-% grid minor;
-% 
-% subplot(3,1,2);
-% plot(vtime1, verr1(2,:), 'r-', 'LineWidth', 2); hold on;grid on;
-% xlabel('time: (s)','FontName','Arial','FontSize',15);
-% ylabel('y: (m)','FontName','Arial','FontSize',15);
-% grid minor;
-% 
-% subplot(3,1,3);
-% plot(vtime1, verr1(3,:), 'r-', 'LineWidth', 2); hold on;grid on;
-% xlabel('time: (s)','FontName','Arial','FontSize',15);
-% ylabel('z: (m)','FontName','Arial','FontSize',15);
-% grid minor;
-% % print(fullfile(outfolder,'err1'),'-dpng','-r300');
-% 
-% figure(6);
-% subplot(3,1,1);
-% plot(vtime2, verr2(1,:), 'r-', 'LineWidth', 2); hold on;grid on;
-% title('Local-Level','FontName','Arial','FontSize',15);
-% xlabel('time: (s)','FontName','Arial','FontSize',15);
-% ylabel('x: (m)','FontName','Arial','FontSize',15);
-% grid minor;
-% 
-% subplot(3,1,2);
-% plot(vtime2, verr2(2,:), 'r-', 'LineWidth', 2); hold on;grid on;
-% xlabel('time: (s)','FontName','Arial','FontSize',15);
-% ylabel('y: (m)','FontName','Arial','FontSize',15);
-% grid minor;
-% 
-% subplot(3,1,3);
-% plot(vtime2, verr2(3,:), 'r-', 'LineWidth', 2); hold on;grid on;
-% xlabel('time: (s)','FontName','Arial','FontSize',15);
-% ylabel('z: (m)','FontName','Arial','FontSize',15);
-% grid minor;
-% print(fullfile(outfolder,'err2'),'-dpng','-r300');
 
+%% generate google map view
 E = wgs84Ellipsoid;
 lat0 = 55+46/60+59.62892/3600;
 long0 = 12+30/60+57.55967/3600;
@@ -300,22 +233,10 @@ h0 = 97.717;
 [lat_bird,lon_bird,h_bird] = ned2geodetic(bird_pos2(2,:),bird_pos2(1,:),-bird_pos2(3,:),lat0,long0,h0,E);
 [lat_marker,lon_marker,h_marker] = ned2geodetic(g_pos2_marker_refine(2,:),g_pos2_marker_refine(1,:),-g_pos2_marker_refine(3,:),lat0,long0,h0,E);
 
-%% to minites
-% lat_bird_m = ((lat_bird - 55) * 60);
-% lat_marker_m = ((lat_marker - 55) * 60);
-% 
-% lon_bird_m = ((lon_bird - 12) * 60);
-% lon_marker_m = ((lon_marker - 12) * 60);
-
 % plot route data
 figure
 plot(lon_bird, lat_bird, 'r--', 'LineWidth', 2);hold on;
 plot(lon_marker, lat_marker, 'g-.', 'LineWidth', 2);
-% line(lat_bird(1), lon_bird(1), 'Marker', 'o', ...
-%     'Color', 'b', 'MarkerFaceColor', 'b', 'MarkerSize', 10);
-% line(lat_bird(end), lon_bird(end,), 'Marker', 's', ...
-%     'Color', 'b', 'MarkerFaceColor', 'b', 'MarkerSize', 10);
-% xlim([-71.4, -71]); 
 xpos = xlim;%[min(lon_bird), max(lon_bird)];
 ypos = ylim;%[min(lat_bird), max(lat_bird)];
 xlim([xpos(1)-0.00001, xpos(2)+0.00001])
@@ -324,12 +245,6 @@ legend({'Ref','Est'},'FontSize',10,'FontName','Arial');
 % title('Map View');
 xlabel('Longitude: minutes ('') seconds ('''') ');
 ylabel('Latitude: minutes ('') seconds ('''') ');
-% outpath = 'D:\dtu\sourcecode\plot_google_map\data';
-% fid = fopen(fullfile(outpath,strcat(filename,'.txt')),'w');
-% for i = 1:length(lon_bird)
-%     fprintf(fid,'%6.8f, %6.8f, %6.8f, %6.8f\n', lon_bird(i),lat_bird(i),lon_marker(i),lat_marker(i));
-% end
-% fclose(fid);
 
 % Google map
 addpath 'D:\dtu\sourcecode\plot_google_map\plot_google_map-master'
@@ -353,8 +268,6 @@ for i = 1:length(ytks)
     ytklbs{i} = sprintf('%2d''%2d''''',ytkmins(i),ytksecs(i));
 end
 
-% xtklbs = cellstr(num2str(xtks(:)));
-% ytklbs = cellstr(num2str(ytks(:)));
 xticklabels(xtklbs);
 yticklabels(ytklbs);
 
