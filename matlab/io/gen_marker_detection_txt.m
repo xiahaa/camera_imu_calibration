@@ -3,20 +3,21 @@ addpath('../misc');
 
 
 % [filename, foldername]  = uigetfile({'*.txt','*.log'});
-foldername = '/Volumes/document/fore-end/data/20191219/3/tmp/';
-filename = 'position.txt';
-
+% foldername = '/Volumes/document/fore-end/data/20191219/3/tmp/';
+foldername = 'D:/dtu/data/hand_eye/20191219/3/tmp';
+filename = 'position-raw.txt';%position-Subpixel-Ahn
+[~,name,ext] = fileparts(filename);
 % basename = configdata();
 % videofile = dir(fullfile(basename,'*.MP4'));
 % [~,name,ext] = fileparts(videofile.name);
 % foldername = fullfile(basename,name,'img');
 
-if ~exist(fullfile(foldername,'position.mat'),'file')
+if ~exist(fullfile(foldername,[name,'.mat']),'file')
     filename = fullfile(foldername,filename);
     data = txtread(filename);
-    save(fullfile(foldername,'position.mat'),'data');
+    save(fullfile(foldername,[name,'.mat']),'data');
 else
-    load(fullfile(foldername,'position.mat'));
+    load(fullfile(foldername,[name,'.mat']));
 end
 
 % time: where you start computing, TODO, make this automatically
@@ -100,6 +101,25 @@ id = sum(isnan(pos2),2) == 0 & pos2(:,2) ~= -1;
 pos2 = pos2(id,:);
 time2 = time(id,:);
 
+pos1(:,2) = medfilt1(pos1(:,2),3);
+pos1(:,3) = medfilt1(pos1(:,3),3);
+pos1(:,4) = medfilt1(pos1(:,4),3);
+
+pos2(:,2) = medfilt1(pos2(:,2),3);
+pos2(:,3) = medfilt1(pos2(:,3),3);
+pos2(:,4) = medfilt1(pos2(:,4),3);
+
+
+figure(1)
+subplot(3,1,1);plot(pos1(:,2));hold on;grid on;
+subplot(3,1,2);plot(pos1(:,3));hold on;grid on;
+subplot(3,1,3);plot(pos1(:,4));hold on;grid on;
+
+figure(2)
+subplot(3,1,1);plot(pos2(:,2));hold on;grid on;
+subplot(3,1,2);plot(pos2(:,3));hold on;grid on;
+subplot(3,1,3);plot(pos2(:,4));hold on;grid on;
+
 %% filtering, interpolation to make data consistent
 hsize = 3;
 posfit1 = pos1;
@@ -143,11 +163,11 @@ for i = 1:length(pos2)
     end
 end
 
-posfit1 = posfit1(1:end-240,:);
-posfit2 = posfit2(1:end-240,:);
+posfit1 = posfit1(1:end,:);
+posfit2 = posfit2(1:end,:);
 
-time1 = time1(1:end-240,:);
-time2 = time2(1:end-240,:);
+time1 = time1(1:end,:);
+time2 = time2(1:end,:);
 
 %% check
 figure(1)
