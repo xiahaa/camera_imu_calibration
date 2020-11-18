@@ -2,7 +2,7 @@ function [R,t,final_consensus] = estimate_rigid_body_transformation_RANSAC(ptsrc
     data = [ptsrc;ptdst];
     threshold = 0.2;
 	if ~isempty(varargin)
-		threshold = varargin{1}
+		threshold = varargin{1};
 	end
     recalculate = true;
     model_func = @estimate_rigid_body_transformation_SVD;
