@@ -40,16 +40,16 @@ imufile = fullfile(folder,'imugps_bird.mat');
 bird_imugps.from_mat(imufile, 0);
 
 % convert to global position
-[gtime1,g_pos1_marker,marker_pos1_in_imu] = compose_g_pos_marker(imugps, time1, pos1, time_offset_to_imu_local, R1.R1, R2, [-0.035;0.115;-0.080],1);
-[gtime2,g_pos2_marker,marker_pos2_in_imu] = compose_g_pos_marker(imugps, time2, pos2, time_offset_to_imu_local, R1.R1, R2, [-0.035;0.115;-0.080],1);
+[gtime1, Rs1, ts1, marker_pos1_in_imu] = find_time_R_t_bodypose(imugps, time1, pos1, time_offset_to_imu_local, R1.R1, R2, [-0.035;0.115;-0.080],1);
+[gtime2, Rs2, ts2, marker_pos2_in_imu] = find_time_R_t_bodypose(imugps, time2, pos2, time_offset_to_imu_local, R1.R1, R2, [-0.035;0.115;-0.080],1);
 
 % find matches 
 [bird_time1, bird_pos1] = find_matches(gtime1,bird_imugps);
 [bird_time2, bird_pos2] = find_matches(gtime2,bird_imugps);
 
 % align them
-[g_pos1_marker_refine] = find_relative_transformation(g_pos1_marker, bird_pos1);
-[g_pos2_marker_refine] = find_relative_transformation(g_pos2_marker, bird_pos2);
+[g_pos1_marker_refine] = find_relative_transformation_new(Rs1, ts1, marker_pos1_in_imu, bird_pos1);
+[g_pos2_marker_refine] = find_relative_transformation_new(Rs2, ts2, marker_pos2_in_imu, bird_pos2);
 
 g_pos1_marker_refine = EKF(g_pos1_marker_refine, gtime1, bird_pos1);
 g_pos2_marker_refine = EKF(g_pos2_marker_refine, gtime2, bird_pos2);
