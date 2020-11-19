@@ -55,8 +55,8 @@ g_pos1_marker_refine = EKF(g_pos1_marker_refine, gtime1, bird_pos1);
 g_pos2_marker_refine = EKF(g_pos2_marker_refine, gtime2, bird_pos2);
 
 % find inliers
-[Ropt1,topt1,final_consensus1] = estimate_rigid_body_transformation_RANSAC(g_pos1_marker_refine, bird_pos1,0.1);
-[Ropt2,topt2,final_consensus2] = estimate_rigid_body_transformation_RANSAC(g_pos2_marker_refine, bird_pos2,0.1);
+[Ropt1,topt1,final_consensus1] = estimate_rigid_body_transformation_RANSAC(g_pos1_marker_refine, bird_pos1);
+[Ropt2,topt2,final_consensus2] = estimate_rigid_body_transformation_RANSAC(g_pos2_marker_refine, bird_pos2);
 g_pos1_marker_refine = Ropt1 * g_pos1_marker_refine + topt1;
 g_pos2_marker_refine = Ropt2 * g_pos2_marker_refine + topt2;
 
@@ -280,7 +280,7 @@ function pos = EKF(pos0, time, y)
     x = [pos0(:,1);[0;0;0]];
     P = blkdiag(eye(3),eye(3)*1000);
     R1 = eye(3)*0.1;
-    R2 = eye(3)*0.009;%0.009 2-3
+    R2 = eye(3)*0.05;%0.009 2-3
     Q = eye(6)*1;
     for i = 1:length(pos0)
         C = [eye(3) zeros(3);eye(3) zeros(3)];
