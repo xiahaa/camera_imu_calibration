@@ -4,7 +4,7 @@ addpath('../misc');
 
 % [filename, foldername]  = uigetfile({'*.txt','*.log'});
 % foldername = '/Volumes/document/fore-end/data/20191219/2/tmp/';
-foldername = 'D:/dtu/data/hand_eye/20191219/1/tmp';
+foldername = 'D:/dtu/data/hand_eye/20191219/3/tmp';
 filename = 'position-raw.txt';%position-Subpixel-Ahn
 [~,name,ext] = fileparts(filename);
 % basename = configdata();
@@ -101,14 +101,17 @@ id = sum(isnan(pos2),2) == 0 & pos2(:,2) ~= -1;
 pos2 = pos2(id,:);
 time2 = time(id,:);
 
-pos1(:,2) = medfilt1(pos1(:,2),3);
-pos1(:,3) = medfilt1(pos1(:,3),3);
-pos1(:,4) = medfilt1(pos1(:,4),3);
+do_median = 0;
+do_interpolation = 0;
+if do_median == 1
+    pos1(:,2) = medfilt1(pos1(:,2),3);
+    pos1(:,3) = medfilt1(pos1(:,3),3);
+    pos1(:,4) = medfilt1(pos1(:,4),3);
 
-pos2(:,2) = medfilt1(pos2(:,2),3);
-pos2(:,3) = medfilt1(pos2(:,3),3);
-pos2(:,4) = medfilt1(pos2(:,4),3);
-
+    pos2(:,2) = medfilt1(pos2(:,2),3);
+    pos2(:,3) = medfilt1(pos2(:,3),3);
+    pos2(:,4) = medfilt1(pos2(:,4),3);
+end
 
 figure(1)
 subplot(3,1,1);plot(pos1(:,2));hold on;grid on;
@@ -125,49 +128,52 @@ hsize = 3;
 posfit1 = pos1;
 posfit2 = pos2;
 
-N = length(pos1);
-for i = 1:length(pos1)
-    if i > hsize && i <= N-hsize
-        id = i+(-hsize:1:hsize);
-    elseif i < hsize
-        id = 1:(2*hsize+1);
-    else
-        id = (N-2*hsize):N;
+if do_interpolation == 1
+
+    N = length(pos1);
+    for i = 1:length(pos1)
+        if i > hsize && i <= N-hsize
+            id = i+(-hsize:1:hsize);
+        elseif i < hsize
+            id = 1:(2*hsize+1);
+        else
+            id = (N-2*hsize):N;
+        end
+        id1 = id(id ~= i);
+        ypred(1) = interp1(id1,posfit1(id1,2),i);
+        ypred(2) = interp1(id1,posfit1(id1,3),i);
+        ypred(3) = interp1(id1,posfit1(id1,4),i);
+        % 
+        if norm(ypred-posfit1(i,2:4)) > 0.1
+            posfit1(i,2:4) = ypred;
+        end
     end
-    id1 = id(id ~= i);
-    ypred(1) = interp1(id1,posfit1(id1,2),i);
-    ypred(2) = interp1(id1,posfit1(id1,3),i);
-    ypred(3) = interp1(id1,posfit1(id1,4),i);
-    % 
-    if norm(ypred-posfit1(i,2:4)) > 0.1
-        posfit1(i,2:4) = ypred;
+
+    N = length(pos2);
+    for i = 1:length(pos2)
+        if i > hsize && i <= N-hsize
+            id = i+(-hsize:1:hsize);
+        elseif i < hsize
+            id = 1:(2*hsize+1);
+        else
+            id = (N-2*hsize):N;
+        end
+        id1 = id(id ~= i);
+        ypred(1) = interp1(id1,posfit2(id1,2),i);
+        ypred(2) = interp1(id1,posfit2(id1,3),i);
+        ypred(3) = interp1(id1,posfit2(id1,4),i);
+        % 
+        if norm(ypred-posfit2(i,2:4)) > 0.1
+            posfit2(i,2:4) = ypred;
+        end
     end
+
+    posfit1 = posfit1(1:end,:);
+    posfit2 = posfit2(1:end,:);
+
+    time1 = time1(1:end,:);
+    time2 = time2(1:end,:);
 end
-
-N = length(pos2);
-for i = 1:length(pos2)
-    if i > hsize && i <= N-hsize
-        id = i+(-hsize:1:hsize);
-    elseif i < hsize
-        id = 1:(2*hsize+1);
-    else
-        id = (N-2*hsize):N;
-    end
-    id1 = id(id ~= i);
-    ypred(1) = interp1(id1,posfit2(id1,2),i);
-    ypred(2) = interp1(id1,posfit2(id1,3),i);
-    ypred(3) = interp1(id1,posfit2(id1,4),i);
-    % 
-    if norm(ypred-posfit2(i,2:4)) > 0.1
-        posfit2(i,2:4) = ypred;
-    end
-end
-
-posfit1 = posfit1(1:end,:);
-posfit2 = posfit2(1:end,:);
-
-time1 = time1(1:end,:);
-time2 = time2(1:end,:);
 
 %% check
 figure(1)

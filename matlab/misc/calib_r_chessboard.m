@@ -84,7 +84,7 @@ end
 if ismac
     symb = '/';
 else
-    symb = '\';
+    symb = '/';
 end
 
 if 1%~exist(fullfile(foldername,'gyroR.mat'),'file')
