@@ -61,8 +61,15 @@ classdef GPS_IMU_Stream < handle
                 obj.start_time = varargin{1};
             else
                 obj.start_time = 0;
-            end        
-            valids = localtime >= obj.start_time;
+            end    
+            if nargin >= 4
+                end_time = obj.start_time + varargin{2};
+            else
+                end_time = inf;
+            end
+            
+            
+            valids = localtime >= obj.start_time & localtime <= end_time;
             obj.time = localtime(valids)';
             obj.GPSTime = imudata(valids,1)';
             obj.p = imudata(valids,2:4)';
