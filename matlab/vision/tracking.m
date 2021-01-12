@@ -30,7 +30,9 @@ classdef tracking
             if size(prev_img,3) == 3
                 prev_img = cv.cvtColor(prev_img, 'RGB2GRAY');
             end
-            prev_img = cv.resize(prev_img,0.5,0.5);
+            resize_ratio = 0.5;
+            
+            prev_img = cv.resize(prev_img,resize_ratio,resize_ratio);
             
             if do_plot
                 sz = round(size(prev_img)*0.5);
@@ -56,7 +58,7 @@ classdef tracking
                 if size(img,3) == 3
                     img = cv.cvtColor(img, 'RGB2GRAY');
                 end
-                img = cv.resize(img, 0.5,0.5);
+                img = cv.resize(img, resize_ratio, resize_ratio);
                 
                 % detect features in previous img
                 prev_points = feature_detection(prev_img,gftt_options,use_mask);
@@ -82,6 +84,11 @@ classdef tracking
                 flow(flow_cnt)=dm;
                 prev_img = img;
                 
+                % only enable this when debugging 
+%                 if false
+%                     save(sprintf('D:/dtu/data/hand_eye/20191219/3/GH014319/tmp/raw_flow/%06d.mat',flow_cnt),...
+%                         'prev_points','curr_points','valids');
+%                 end
                 
                 if do_plot
                     imgc = cv.cvtColor(img,'GRAY2RGB');
