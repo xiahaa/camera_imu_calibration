@@ -284,9 +284,10 @@ classdef CalibrationDTU < handle
             gyro_mag = vecnorm(obj.video.gopro_gyro(2:4,:));
             id = gyro_mag > (mean(gyro_mag)+0.5*std(gyro_mag));
             gyro_1 = obj.video.gopro_gyro(:,id);
-            x = zeros(3,length(obj.video.gopro_gyro));
-            y = zeros(3,length(obj.video.gopro_gyro));
+            x = zeros(3,length(gyro_1));
+            y = zeros(3,length(gyro_1));
             idalign = 1;
+            invalid = [];
             for i = 1:length(gyro_1)
                 t1 = gyro_1(1,i);
                 [minval,minid] = min(abs(obj.imugps.time-(t1+obj.params.initialized.time_offset)));
@@ -298,11 +299,15 @@ classdef CalibrationDTU < handle
                 else
                     if idalign == length(obj.imugps.time)
                         break;
+                    else
+                        invalid(end+1) = i;
                     end
                 end
             end
-            x(:,i+1:end)=[];
-            y(:,i+1:end)=[];
+%             x(:,i+1:end)=[];
+%             y(:,i+1:end)=[];
+            x(:,invalid) = [];
+            y(:,invalid) = [];
             
             if length(x) < 2
                 error('Hand-eye calibration requires >= 2 rotations');
@@ -357,6 +362,31 @@ classdef CalibrationDTU < handle
             plot(obj.video.gopro_gyro(1,:)+obj.params.initialized.time_offset, align_gyro(3,:), 'r-','LineWidth',2);hold on;
             plot(obj.imugps.time, obj.imugps.w(3,:), 'b-.','LineWidth',1.5);grid on;
             legend({'gopro gyro','gyro'});
+            
+            %% temp code
+%             R = eye(3);
+%             t = obj.video.gopro_gyro(1,1);
+%             Rs = zeros(3,3,size(obj.video.gopro_gyro,2));
+%             for i = 2:size(obj.video.gopro_gyro,2)
+%                 dt = obj.video.gopro_gyro(1,i) - t;
+%                 t = obj.video.gopro_gyro(1,i);
+%                 Rs(:,:,i) = R * expm(skewm(obj.video.gopro_gyro(2:4,i))*dt);
+%                 R = Rs(:,:,i);
+%             end
+%             [y,p,r] = dcm2angle(Rs);
+%             figure
+%             subplot(3,1,1);
+%             plot(obj.video.gopro_gyro(1,:)+obj.params.initialized.time_offset, y, 'r-','LineWidth',2);hold on;
+%             plot(obj.imugps.time, obj.imugps.yaw, 'b-.','LineWidth',1.5);grid on;
+%             legend({'gopro gyro','gyro'});
+%             subplot(3,1,2);
+%             plot(obj.video.gopro_gyro(1,:)+obj.params.initialized.time_offset, p, 'r-','LineWidth',2);hold on;
+%             plot(obj.imugps.time, obj.imugps.pitch, 'b-.','LineWidth',1.5);grid on;
+%             legend({'gopro gyro','gyro'});
+%             subplot(3,1,3);
+%             plot(obj.video.gopro_gyro(1,:)+obj.params.initialized.time_offset, r, 'r-','LineWidth',2);hold on;
+%             plot(obj.imugps.time, obj.imugps.roll, 'b-.','LineWidth',1.5);grid on;
+%             legend({'gopro gyro','gyro'});
         end
         
         function R = find_R1(obj)
