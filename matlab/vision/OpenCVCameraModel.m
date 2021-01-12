@@ -19,7 +19,7 @@ classdef OpenCVCameraModel < Camera
         end
         
         function points1 = undistort(obj,points)
-            points1 = cv.undistortPoints(points',obj.camera_matrix, obj.dist_coefs);
+            points1 = cv.undistortPoints(points',obj.camera_matrix, obj.dist_coefs, 'P', obj.camera_matrix);
             points1 = points1';
         end
 
