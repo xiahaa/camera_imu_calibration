@@ -6,10 +6,11 @@ function [marker_pos_refine] = find_relative_transformation_new(Rs, ts, marker_p
     for i = 1:size(bird_pos,2)
         marker_pos(:,i) = Rs(:,:,i) * marker_pos_body(:,i) + ts(:,i);
     end
-    l = vecnorm(bird_pos - marker_pos);
+    train_len = 1:size(bird_pos,2);% for 1: 30*60
+    l = vecnorm(bird_pos(:,train_len) - marker_pos(:,train_len));
     x0 = [mean(l);zeros(3,1)];
     options = optimset('Display','off','TolFun',1e-10,'TolX',1e-10,'MaxIter',1000,'MaxFunEvals',10000,'Algorithm','levenberg-marquardt');
-    x = lsqnonlin(@cost_func_total,x0,[],[],options,marker_pos,bird_pos,Rs);
+    x = lsqnonlin(@cost_func_total,x0,[],[],options,marker_pos(:,train_len),bird_pos(:,train_len),Rs);
     
     t = x(2:4);
     tg = marker_pos;
