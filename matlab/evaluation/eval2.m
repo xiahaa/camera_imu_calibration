@@ -2,7 +2,7 @@ clc;close all;clear all;
 addpath ../misc/
 addpath utils\
 % folder = '/Volumes/document/fore-end/data/20191219/3';%uigetdir();%'D:\dtu\data\hand_eye\1016\3';
-folder = 'D:/dtu/data/hand_eye/20191219/3';
+folder = 'D:/dtu/data/hand_eye/20191219/2';
 
 % traverse this folder to find the video name
 lists = dir(folder);
@@ -117,22 +117,27 @@ grid minor;
 
 %print(fullfile(outfolder,'marker2'),'-dpng','-r300');
 
-v1 = mean(abs(g_pos1_marker_refine(:,final_consensus1)-bird_pos1(:,final_consensus1)),2);
-s1 = std(abs(g_pos1_marker_refine(:,final_consensus1)-bird_pos1(:,final_consensus1)),0,2);
+% v1 = mean(abs(g_pos1_marker_refine(:,final_consensus1)-bird_pos1(:,final_consensus1)),2);
+% s1 = std(abs(g_pos1_marker_refine(:,final_consensus1)-bird_pos1(:,final_consensus1)),0,2);
+% 
+% v2 = mean(abs(g_pos2_marker_refine(:,final_consensus2)-bird_pos2(:,final_consensus2)),2);
+% s2 = std(abs(g_pos2_marker_refine(:,final_consensus2)-bird_pos2(:,final_consensus2)),0,2);
+% 
+% disp(v1);
+% disp(s1);
+% disp(v2);
+% disp(s2);
 
-v2 = mean(abs(g_pos2_marker_refine(:,final_consensus2)-bird_pos2(:,final_consensus2)),2);
-s2 = std(abs(g_pos2_marker_refine(:,final_consensus2)-bird_pos2(:,final_consensus2)),0,2);
-
+v1 = mean([abs(g_pos1_marker_refine(:,final_consensus1)-bird_pos1(:,final_consensus1)), abs(g_pos2_marker_refine(:,final_consensus2)-bird_pos2(:,final_consensus2))],2);
+s1 = std([abs(g_pos1_marker_refine(:,final_consensus1)-bird_pos1(:,final_consensus1)), abs(g_pos2_marker_refine(:,final_consensus2)-bird_pos2(:,final_consensus2))],0,2);
 disp(v1);
 disp(s1);
-disp(v2);
-disp(s2);
 
-err1 = (g_pos1_marker_refine(:,final_consensus1)-bird_pos1(:,final_consensus1));
-err2 = (g_pos2_marker_refine(:,final_consensus2)-bird_pos2(:,final_consensus2));
+err1 = (g_pos1_marker_refine(:,:)-bird_pos1(:,:));
+err2 = (g_pos2_marker_refine(:,:)-bird_pos2(:,:));
 
-bird_time1 = bird_time1(final_consensus1);
-bird_time2 = bird_time2(final_consensus2);
+bird_time1 = bird_time1(:);
+bird_time2 = bird_time2(:);
 
 figure(3);
 subplot(3,1,1);
@@ -142,6 +147,7 @@ plot(bird_time1, err1(1,:), 'r-', 'LineWidth', 2); hold on;grid on;
 ylabel('x: (m)','FontName','Arial','FontSize',15);
 grid minor;
 axis tight
+ylim([-0.1,0.1]);
 maxylim = max(ylim);
 minylim = min(ylim);
 for i = 2:length(bird_time1)
@@ -156,6 +162,7 @@ plot(bird_time1, err1(2,:), 'r-', 'LineWidth', 2); hold on;grid on;
 ylabel('y: (m)','FontName','Arial','FontSize',15);
 grid minor;
 axis tight
+ylim([-0.1,0.1]);
 maxylim = max(ylim);
 minylim = min(ylim);
 for i = 2:length(bird_time1)
@@ -170,6 +177,7 @@ xlabel('time: (s)','FontName','Arial','FontSize',15);
 ylabel('z: (m)','FontName','Arial','FontSize',15);
 grid minor;
 axis tight
+ylim([-0.1,0.1]);
 maxylim = max(ylim);
 minylim = min(ylim);
 for i = 2:length(bird_time1)
@@ -187,6 +195,7 @@ plot(bird_time2, err2(1,:), 'r-', 'LineWidth', 2); hold on;grid on;
 ylabel('x: (m)','FontName','Arial','FontSize',15);
 grid minor;
 axis tight
+ylim([-0.1,0.1]);
 maxylim = max(ylim);
 minylim = min(ylim);
 for i = 2:length(bird_time2)
@@ -201,6 +210,7 @@ plot(bird_time2, err2(2,:), 'r-', 'LineWidth', 2); hold on;grid on;
 ylabel('y: (m)','FontName','Arial','FontSize',15);
 grid minor;
 axis tight
+ylim([-0.1,0.1]);
 maxylim = max(ylim);
 minylim = min(ylim);
 for i = 2:length(bird_time2)
@@ -215,6 +225,7 @@ xlabel('time: (s)','FontName','Arial','FontSize',15);
 ylabel('z: (m)','FontName','Arial','FontSize',15);
 grid minor;
 axis tight
+ylim([-0.1,0.1]);
 maxylim = max(ylim);
 minylim = min(ylim);
 for i = 2:length(bird_time2)
@@ -280,7 +291,8 @@ function pos = EKF(pos0, time, y)
     x = [pos0(:,1);[0;0;0]];
     P = blkdiag(eye(3),eye(3)*1000);
     R1 = eye(3)*0.1;
-    R2 = eye(3)*0.05;%0.009 2-3
+    R2 = eye(3)*0.5;%0.009 2-3
+%     R2 = diag([0.05 0.05 0.01]);%eye(3)*0.03;%0.009 2-3 type2
     Q = eye(6)*1;
     for i = 1:length(pos0)
         C = [eye(3) zeros(3);eye(3) zeros(3)];
