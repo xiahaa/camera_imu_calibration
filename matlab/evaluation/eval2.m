@@ -2,7 +2,7 @@ clc;close all;clear all;
 addpath ../misc/
 addpath utils\
 % folder = '/Volumes/document/fore-end/data/20191219/3';%uigetdir();%'D:\dtu\data\hand_eye\1016\3';
-folder = 'D:/dtu/data/hand_eye/20191219/2';
+folder = 'D:/dtu/data/hand_eye/20191219/1';
 
 % traverse this folder to find the video name
 lists = dir(folder);
@@ -30,7 +30,7 @@ load(califile);
 load(timeoffsetfile,'time_offset_to_imu_local');
 
 % vision position
-visionfile = fullfile(folder,'tmp','position-raw-rec.mat');
+visionfile = fullfile(folder,'tmp','position-Subpixel-rec.mat');
 load(visionfile);
 
 % we find imugps data on bird
@@ -132,6 +132,12 @@ v1 = mean([abs(g_pos1_marker_refine(:,final_consensus1)-bird_pos1(:,final_consen
 s1 = std([abs(g_pos1_marker_refine(:,final_consensus1)-bird_pos1(:,final_consensus1)), abs(g_pos2_marker_refine(:,final_consensus2)-bird_pos2(:,final_consensus2))],0,2);
 disp(v1);
 disp(s1);
+
+v1 = mean([abs(g_pos1_marker_refine(:,:)-bird_pos1(:,:)), abs(g_pos2_marker_refine(:,:)-bird_pos2(:,:))],2);
+s1 = std([abs(g_pos1_marker_refine(:,:)-bird_pos1(:,:)), abs(g_pos2_marker_refine(:,:)-bird_pos2(:,:))],0,2);
+disp(v1);
+disp(s1);
+
 
 err1 = (g_pos1_marker_refine(:,:)-bird_pos1(:,:));
 err2 = (g_pos2_marker_refine(:,:)-bird_pos2(:,:));
@@ -291,7 +297,7 @@ function pos = EKF(pos0, time, y)
     x = [pos0(:,1);[0;0;0]];
     P = blkdiag(eye(3),eye(3)*1000);
     R1 = eye(3)*0.1;
-    R2 = eye(3)*0.5;%0.009 2-3
+    R2 = eye(3)*0.1;%0.009 2-3
 %     R2 = diag([0.05 0.05 0.01]);%eye(3)*0.03;%0.009 2-3 type2
     Q = eye(6)*1;
     for i = 1:length(pos0)
